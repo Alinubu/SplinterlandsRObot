@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<users>
+  <user><!--Duplicate this node for each user you want to use-->
+	<username>username</username><!--Hive username withous @-->
+	<postingKEY>5XXXX</postingKEY>
+	<activeKEY>5XXXX</activeKEY><!--Only used for Pro Features-->
+	<powerLimit>1000</powerLimit><!--Used by Rental Bot (Not available yet)-->
+  </user>
+</users>

@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<config>
+  <MaxThreads>1</MaxThreads><!--The number of accounts the bot will play in parallel-->
+  <HoldCacheFor>50</HoldCacheFor><!--Time in minutes the bot will cache data from splinterlands-->
+  <DebugMode>false</DebugMode><!--Just enable this if you have issues, will diplay a lot more logs in the console-->
+  <ApiUrl>http://18.184.197.121:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
+  <SleepBetweenBattles>5</SleepBetweenBattles><!--After each battle account will be benched for X minutes-->
+  <ShowBattleResults>true</ShowBattleResults><!--Displays battle results and overview of accounts-->
+  <ECR>
+	<Limit>75</Limit><!--Bot will play until user is below the set limit-->
+	<WaitToRecharge>false</WaitToRecharge><!--After the lower limit is reached, bot will wait until accout ECR is at the set value-->
+	<RechargeLimit>99</RechargeLimit><!--ECR value to recharge to-->
+  </ECR>
+  <League>
+	<AdvanceToNext>true</AdvanceToNext><!--Bot will advance user to a higher league (Bronze->Silver, Silver->Gold)-->
+  </League>
+  <Quests>
+	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
+	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
+	<AvoidQuests>
+	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
+	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
+	</AvoidQuests>
+  </Quests>
+  <ProFeatures><!--This features are not available by default, dm me for details-->
+	<Airdrops>
+	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
+	</Airdrops>
+	<RentalBot><!--Not available yet-->
+	  <UseRentalBot>false</UseRentalBot>
+	  <RentGoldOnly>true</RentGoldOnly>
+	  <MaxPricePer500DEC>1.5</MaxPricePer500DEC>
+	  <DaysToRent>1</DaysToRent>
+	</RentalBot>
+	<TransferBot>
+	  <MainAccount>username</MainAccount><!--The main account you want the assets to be transfered to-->
+	  <TransferCards>false</TransferCards><!--Will transfer all user Cards, if you want some cards to not be transfered, you need to lock them-->
+	  <TransferDec>false</TransferDec><!--Will transfer DEC currency to main account-->
+	  <KeepDecAmount>15</KeepDecAmount><!--The amount of DEC you want to keed for one account-->
+	  <MininumDecToTransfer>10</MininumDecToTransfer><!--Bot will not trigger a transaction if the remaining amount is less than what is set-->
+	  <TransferSps>false</TransferSps><!--Will transfer SPS currency to main account-->
+	</TransferBot>
+	<UsePrivateAPi>false</UsePrivateAPi><!--No Limit for API Calls-->
+	<UseEnemyPrediction>false</UseEnemyPrediction><!--Tries to predict enemy team-->
+  </ProFeatures>
+</config>

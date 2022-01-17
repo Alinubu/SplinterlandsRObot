@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.95.4" />
+    <PackageReference Include="ConsoleTables" Version="2.4.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Websocket.Client" Version="4.4.43" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Cryptography.ECDSA">
+      <HintPath>..\..\..\Users\studi\Downloads\hive-net-master\hive-net-master\Libraries\Cryptography.ECDSA.dll</HintPath>
+    </Reference>
+    <Reference Include="HiveAPI">
+      <HintPath>..\..\..\Users\studi\Downloads\hive-net-master\hive-net-master\Libraries\HiveAPI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Config\config.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Config\users.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
