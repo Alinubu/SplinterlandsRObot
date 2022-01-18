@@ -52,7 +52,7 @@ namespace SplinterlandsRObot
             DO_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/DoQuests").InnerText);
             CLAIM_QUEST_REWARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/ClaimRewards").InnerText);
             AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/Enabled").InnerText);
-            AVOID_SPECIFIC_QUESTS_LIST = doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/Enabled").InnerText != null ? doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/Enabled").InnerText.Split(';') : new string[0];
+            AVOID_SPECIFIC_QUESTS_LIST = doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText != null ? doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText.Split(';') : new string[0];
             COLLECT_SPS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/Airdrops/CollectSPS").InnerText);
             USE_RENTAL_BOT = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/UseRentalBot").InnerText);
             RENT_GOLD_ONLY = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RentGoldOnly").InnerText);
