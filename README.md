@@ -43,7 +43,7 @@ Settings that can be changed withoud restarting the application (**Changes will 
 * TRANSFER_BOT_SEND_SPS=true/false
 
 ## Setup guide
-- Download the lates version from Release page
+- Download the lates version from [Release page](https://github.com/Alinubu/SplinterlandsRObot/releases)
 - Unzip the downloaded file
 - Open users.xml with your favorite text editor and fill the required user data
 - Open config.xml with your favorite text editor and adjust the settings to your needs
@@ -51,7 +51,7 @@ Settings that can be changed withoud restarting the application (**Changes will 
 - Run the SplinterlandsRObot file
 
 ## Config settings
-![config](https://i.ibb.co/TPr67LP/config-example.jpg)
+![config](./config-example.jpg)
 
 ## Support & Community
 [Discord](https://discord.gg/PrqxhN6d9j)
