@@ -151,6 +151,7 @@ namespace SplinterlandsRObot.API
             JArray balances = (JArray)JToken.Parse(result);
 
             var balanceInfo = balances.Where(x => (string)x["token"] == "ECR").First();
+            if (balanceInfo["balance"].Type == JTokenType.Null) return 100;
             var captureRate = (int)balanceInfo["balance"];
             DateTime lastRewardTime = (DateTime)balanceInfo["last_reward_time"];
             double ecrRegen = 0.0868;

@@ -27,6 +27,7 @@ namespace SplinterlandsRObot.Game
         private string questColor = "";
         private string questProgress = "";
         private bool questCompleted = false;
+        private bool questRenewed = false;
         private string currentSeason = "";
         private bool waitToRechargeECR = false;
         private DateTime SleepUntil;
@@ -110,7 +111,7 @@ namespace SplinterlandsRObot.Game
                         await new CollectSPS().ClaimSPS(UserData);
                     }
 
-                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate, 2);
+                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate != null ? (double)userDetails.capture_rate : 0, 2);
                     InstanceManager.UsersStatistics[botInstance].Account = UserData.Username;
                     InstanceManager.UsersStatistics[botInstance].Rating = userDetails.rating;
                     InstanceManager.UsersStatistics[botInstance].CollectionPower = userDetails.collection_power;
@@ -145,13 +146,17 @@ namespace SplinterlandsRObot.Game
                     Logs.LogMessage($"{UserData.Username}: Quests enabled", Logs.LOG_SUCCESS, true);
 
                     questData = await SP_API.GetQuestData(UserData.Username);
-                    if(await new Quests().CheckForNewQuest(questData, UserData, questCompleted)) APICounter = 99;
+                    if (await new Quests().CheckForNewQuest(questData, UserData, questCompleted))
+                    {
+                        questRenewed = false;
+                        APICounter = 99;
+                    }
 
                     if (questData != null)
                     {
                         questColor = quests.GetQuestColor(questData.name);
 
-                        if (Settings.AVOID_SPECIFIC_QUESTS)
+                        if (Settings.AVOID_SPECIFIC_QUESTS && !questRenewed)
                         {
                             if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
                             {
@@ -159,6 +164,7 @@ namespace SplinterlandsRObot.Game
                                 if (await new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
                                 {
                                     Logs.LogMessage($"{UserData.Username}: New Quest received", Logs.LOG_SUCCESS);
+                                    questRenewed = true;
                                     questData = await SP_API.GetQuestData(UserData.Username);
                                     questColor = quests.GetQuestColor(questData.name);
                                     APICounter = 99;
