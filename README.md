@@ -1,20 +1,21 @@
+(https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 # Splinterlands RO Bot
 
 ## Bot features
 * Quests: 
-	* Bot will prioritize teams based on active quest.
-	* You can set a list of quests that you want the bot to avoid and it will request a new quest when possible
-	* Bot can claim quest rewards
+	- Bot will prioritize teams based on active quest.
+	- You can set a list of quests that you want the bot to avoid and it will request a new quest when possible
+	- Bot can claim quest rewards
 * Battle:
-	* Fast battles due to blockchain interaction
-	* Multiple accounts can play in parallel
-	* Energy capture rate limit
-	* Bot can wait for the ECR to recharge to a specific value befor starting to play again
+	- Fast battles due to blockchain interaction
+	- Multiple accounts can play in parallel
+	- Energy capture rate limit
+	- Bot can wait for the ECR to recharge to a specific value befor starting to play again
 * Pro features:
-	* Bot can collect Hive SPS Airdrops
-	* Transfer Bot for transfering assets to one main account (Cards, Dec, SPS)
-	* Bot will try to predict the enemy team to increase the chances of winning !experimental feature
-	* Quest rewards export to Excel for the past 30 days
+	- Bot can collect Hive SPS Airdrops
+	- Transfer Bot for transfering assets to one main account (Cards, Dec, SPS)
+	- Bot will try to predict the enemy team to increase the chances of winning !experimental feature
+	- Quest rewards export to Excel for the past 30 days
 
 ## Console Commands
 * START-TRANSFER-BOT (Starts the transfer process from all the accounts to the main accout)
