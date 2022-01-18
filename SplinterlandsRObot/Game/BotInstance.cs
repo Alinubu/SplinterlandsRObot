@@ -111,7 +111,7 @@ namespace SplinterlandsRObot.Game
                         await new CollectSPS().ClaimSPS(UserData);
                     }
 
-                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate, 2);
+                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate != null ? (double)userDetails.capture_rate : 0, 2);
                     InstanceManager.UsersStatistics[botInstance].Account = UserData.Username;
                     InstanceManager.UsersStatistics[botInstance].Rating = userDetails.rating;
                     InstanceManager.UsersStatistics[botInstance].CollectionPower = userDetails.collection_power;
