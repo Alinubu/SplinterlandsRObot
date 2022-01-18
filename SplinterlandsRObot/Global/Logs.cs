@@ -8,7 +8,7 @@ namespace SplinterlandsRObot
         public static string LOG_SUCCESS = "SUCCESS";
         public static string LOG_ALERT = "ALERT";
         public static string LOG_WARNING = "WARNING";
-        public static string[] CONSOLE_TABLE_HEADER = new string[] { "Account", "ECR", "Wins", "Draws", "Losses", "Winrate", "Last DEC Reward", "Total DEC Rewards", "Rating", "CP", "Quest", "NextMatchAt" };
+        public static string[] CONSOLE_TABLE_HEADER = new string[] { "Account", "ECR", "Wins", "Draws", "Losses", "Winrate", "Last DEC Reward", "Total DEC Rewards", "Rating", "CP", "Quest" };
         public static object _lock = new object();
 
         public static string nickname = "";
@@ -51,7 +51,7 @@ namespace SplinterlandsRObot
         public static void OutputStat()
         {
             var table = new ConsoleTable(CONSOLE_TABLE_HEADER);
-            InstanceManager.UsersStatistics.ForEach(u => table.AddRow(u.Account, u.ECR, u.Wins, u.Draws, u.Losses, Math.Round((Convert.ToDouble(u.Wins) / ((u.Wins + u.Draws + u.Losses) == 0 ? Convert.ToDouble(1) : Convert.ToDouble((u.Wins + u.Draws + u.Losses))) * Convert.ToDouble(100)),2).ToString() + "%", u.MatchRewards, Math.Round(Convert.ToDouble(u.TotalRewards),3), u.Rating + "[" + u.RatingChange + "]", u.CollectionPower, u.Quest, u.NextMatchIn.ToString("yyyy-MM-dd HH:mm:ss")));
+            InstanceManager.UsersStatistics.ForEach(u => table.AddRow(u.Account, u.ECR, u.Wins, u.Draws, u.Losses, Math.Round((Convert.ToDouble(u.Wins) / ((u.Wins + u.Draws + u.Losses) == 0 ? Convert.ToDouble(1) : Convert.ToDouble((u.Wins + u.Draws + u.Losses))) * Convert.ToDouble(100)),2).ToString() + "%", u.MatchRewards, Math.Round(Convert.ToDouble(u.TotalRewards),3), u.Rating + "[" + u.RatingChange + "]", u.CollectionPower, u.Quest)));
             table.Configure(o => o.NumberAlignment = Alignment.Right);
             table.Configure(table => table.EnableCount = false);
             lock (_lock)
