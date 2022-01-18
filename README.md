@@ -50,5 +50,8 @@ Settings that can be changed withoud restarting the application (**Changes will 
 - Linux Only! Run ****sudo chmod +x SplinterlandsRObot**** before starting the bot
 - Run the SplinterlandsRObot file
 
+## Config settings
+![config](https://ibb.co/KVmdfwV)
+
 ## Support & Community
 [Discord](https://discord.gg/PrqxhN6d9j)
