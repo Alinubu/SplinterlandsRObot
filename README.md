@@ -1,5 +1,5 @@
-![banner](https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 # Splinterlands RO Bot
+![banner](https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 
 ## Bot features
 * Quests: 
