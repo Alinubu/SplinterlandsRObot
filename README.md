@@ -1,4 +1,4 @@
-# Splinterlands RO Bot
+# Splinterlands RO Bot - [Discord](https://discord.gg/PrqxhN6d9j)
 ![banner](https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 
 ## Bot features
