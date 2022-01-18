@@ -51,7 +51,7 @@ Settings that can be changed withoud restarting the application (**Changes will 
 - Run the SplinterlandsRObot file
 
 ## Config settings
-![config](./config-example.jpg)
+![config](config-example.jpg)
 
 ## Support & Community
 [Discord](https://discord.gg/PrqxhN6d9j)
