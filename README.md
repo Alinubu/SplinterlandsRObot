@@ -1,4 +1,4 @@
-(https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
+!(https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 # Splinterlands RO Bot
 
 ## Bot features
