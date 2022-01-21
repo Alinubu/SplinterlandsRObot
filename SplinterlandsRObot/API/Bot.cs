@@ -81,7 +81,8 @@ namespace SplinterlandsRObot.API
                 new JProperty("card5",result["card5"]),
                 new JProperty("card5Name",result["card5Name"]),
                 new JProperty("card6",result["card6"]),
-                new JProperty("card6Name",result["card6Name"])
+                new JProperty("card6Name",result["card6Name"]),
+                new JProperty("teamHash",result["teamHash"])
             };
 
             return token;
