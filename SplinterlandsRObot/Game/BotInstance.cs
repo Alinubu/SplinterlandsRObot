@@ -355,9 +355,15 @@ namespace SplinterlandsRObot.Game
 
                     await Task.Delay(new Random().Next(3000, 8000));
                     var submittedTeam = await HiveActions.SubmitTeam(tx, matchDetails, team, UserData, CardsCached);
-                    if (!await WaitForTransactionSuccess(submittedTeam.tx, 10))
+                    Logs.LogMessage($"{UserData.Username}: Team submitted. TX:{submittedTeam.tx}");
+                    if (!await WaitForTransactionSuccess(submittedTeam.tx, 15))
                     {
-                        SleepUntil = DateTime.Now.AddMinutes(Settings.SLEEP_BETWEEN_BATTLES);
+                        //try to submit again
+                        var submittedTeam2 = await HiveActions.SubmitTeam(tx, matchDetails, team, UserData, CardsCached);
+                        if (!await WaitForTransactionSuccess(submittedTeam2.tx, 5))
+                        {
+                            SleepUntil = DateTime.Now.AddMinutes(Settings.SLEEP_BETWEEN_BATTLES);
+                        }
                     }
 
                     
@@ -395,8 +401,11 @@ namespace SplinterlandsRObot.Game
                 }
                 Logs.LogMessage($"{UserData.Username}: Battle finished!");
 
-                if(Settings.SHOW_BATTLE_RESULTS)
+                if (Settings.SHOW_BATTLE_RESULTS)
+                {
                     await ShowBattleResult(tx, surrender);
+                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate != null ? (double)userDetails.capture_rate : 0, 2);
+                }
             }
             catch (Exception ex)
             {
@@ -509,6 +518,7 @@ namespace SplinterlandsRObot.Game
                     }
                 }
             }
+            Logs.LogMessage($"{UserData.Username}: No response from websocket.", Logs.LOG_WARNING);
             return false;
         }
 
