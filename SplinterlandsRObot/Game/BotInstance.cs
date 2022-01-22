@@ -156,7 +156,7 @@ namespace SplinterlandsRObot.Game
                     {
                         questColor = quests.GetQuestColor(questData.name);
 
-                        if (Settings.AVOID_SPECIFIC_QUESTS && !questRenewed)
+                        if (Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
                         {
                             if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
                             {
@@ -355,18 +355,12 @@ namespace SplinterlandsRObot.Game
 
                     await Task.Delay(new Random().Next(3000, 8000));
                     var submittedTeam = await HiveActions.SubmitTeam(tx, matchDetails, team, UserData, CardsCached);
-                    Logs.LogMessage($"{UserData.Username}: Team submitted. TX:{submittedTeam.tx}");
+                    Logs.LogMessage($"{UserData.Username}: Team submitted. TX:{submittedTeam.tx}", supress: true);
                     if (!await WaitForTransactionSuccess(submittedTeam.tx, 15))
                     {
-                        //try to submit again
-                        var submittedTeam2 = await HiveActions.SubmitTeam(tx, matchDetails, team, UserData, CardsCached);
-                        if (!await WaitForTransactionSuccess(submittedTeam2.tx, 5))
-                        {
-                            SleepUntil = DateTime.Now.AddMinutes(Settings.SLEEP_BETWEEN_BATTLES);
-                        }
+                        SleepUntil = DateTime.Now.AddMinutes(Settings.SLEEP_BETWEEN_BATTLES);
                     }
 
-                    
                     while (stopwatch.Elapsed.Seconds < 145 && !surrender)
                     {
                         if (Settings.WINDOWS7)
@@ -396,7 +390,10 @@ namespace SplinterlandsRObot.Game
                     }
                     else
                     {
-                        HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached);
+                        if(!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached))
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Error revealing team.", Logs.LOG_WARNING);
+                        }
                     }
                 }
                 Logs.LogMessage($"{UserData.Username}: Battle finished!");
