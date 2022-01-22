@@ -92,7 +92,7 @@ namespace SplinterlandsRObot.Hive
             return ("", "");
         }
 
-        public bool RevealTeam(string tx, JToken matchDetails, JToken team, string secret, User user, CardsCollection CardsCached)
+        public void RevealTeam(string tx, JToken matchDetails, JToken team, string secret, User user, CardsCollection CardsCached)
         {
             try
             {
@@ -133,21 +133,11 @@ namespace SplinterlandsRObot.Hive
                 Logs.LogMessage($"{user.Username}: Reveal TX:{JsonConvert.SerializeObject(oTransaction.tx)}", supress: true);
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(InstanceManager.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "https://splinterlands.com/", Encoding.UTF8);
-                bool txSuccess = Convert.ToBoolean(DoQuickRegex("success\":\"(.*?)\"", response));
-                if (!txSuccess)
-                {
-                    Logs.LogMessage($"{user.Username}: Error at revealing team. Transaction was not successful", Logs.LOG_WARNING);
-                    return false;
-                }
-                Logs.LogMessage($"{user.Username}: Reveal response:{JsonConvert.SerializeObject(response)}", supress: true);
-                return true;
             }
             catch (Exception ex)
             {
                 Logs.LogMessage($"{user.Username}: Error at revealing team: " + ex.ToString(), Logs.LOG_WARNING);
-                return false;
             }
-            return false;
         }
 
         public COperations.custom_json CreateCustomJson(User user, bool activeKey, bool postingKey, string methodName, string json)
