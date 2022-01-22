@@ -390,10 +390,7 @@ namespace SplinterlandsRObot.Game
                     }
                     else
                     {
-                        if(!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached))
-                        {
-                            Logs.LogMessage($"{UserData.Username}: Error revealing team.", Logs.LOG_WARNING);
-                        }
+                        HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached);
                     }
                 }
                 Logs.LogMessage($"{UserData.Username}: Battle finished!");
