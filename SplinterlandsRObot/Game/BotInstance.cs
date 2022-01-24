@@ -316,7 +316,7 @@ namespace SplinterlandsRObot.Game
 
                             matchDetails = webSocketClient.states[GameState.match_found];
                         }
-                        Logs.LogMessage($"{UserData.Username}: New match found - Manacap: {matchDetails["mana_cap"]}; Ruleset: {matchDetails["ruleset"]}", Logs.LOG_ALERT);
+                        Logs.LogMessage($"{UserData.Username}: New match found - Manacap: {matchDetails["mana_cap"]}; Ruleset: {matchDetails["ruleset"]}; Inactive splinters: {matchDetails["inactive"]}", Logs.LOG_ALERT);
                     }
                     JToken team = new JObject();
                     
@@ -351,6 +351,10 @@ namespace SplinterlandsRObot.Game
                         Logs.LogMessage($"{UserData.Username}: API couldn't find any team - Skipping Account", Logs.LOG_WARNING);
                         SleepUntil = DateTime.Now.AddMinutes(5);
                         return SleepUntil;
+                    }
+                    else
+                    {
+                        Logs.OutputTeam(UserData.Username, team["summonerName"].ToString(), team["card1Name"].ToString(), team["card2Name"].ToString(), team["card3Name"].ToString(), team["card4Name"].ToString(), team["card5Name"].ToString(), team["card6Name"].ToString());
                     }
 
                     await Task.Delay(new Random().Next(3000, 8000));
@@ -390,7 +394,8 @@ namespace SplinterlandsRObot.Game
                     }
                     else
                     {
-                        HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached);
+                        if (!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached))
+                            Logs.LogMessage($"{UserData.Username}: Error revealing team.", Logs.LOG_WARNING);
                     }
                 }
                 Logs.LogMessage($"{UserData.Username}: Battle finished!");
