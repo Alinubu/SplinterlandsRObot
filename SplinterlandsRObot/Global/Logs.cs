@@ -9,6 +9,7 @@ namespace SplinterlandsRObot
         public static string LOG_ALERT = "ALERT";
         public static string LOG_WARNING = "WARNING";
         public static string[] CONSOLE_TABLE_HEADER = new string[] { "Account", "ECR", "Wins", "Draws", "Losses", "Winrate", "Last DEC Reward", "Total DEC Rewards", "Rating", "CP", "Quest" };
+        public static string[] CONSOLE_TABLE_TEAM = new string[] { "Summoner", "Monster1", "Monster2", "Monster3", "Monster4", "Monster5", "Monster6" };
         public static object _lock = new object();
 
         public static string nickname = "";
@@ -57,6 +58,18 @@ namespace SplinterlandsRObot
             lock (_lock)
             {
                 Console.ForegroundColor = ConsoleColor.White;
+                table.Write(Format.Default);
+            }
+        }
+        public static void OutputTeam(string username, string summoner, string monster1, string monster2, string monster3, string monster4, string monster5, string monster6)
+        {
+            var table = new ConsoleTable(CONSOLE_TABLE_TEAM);
+            table.AddRow(summoner, monster1, monster2, monster3, monster4, monster5, monster6);
+            table.Configure(table => table.EnableCount = false);
+            lock (_lock)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                LogMessage($"{username}: Found team");
                 table.Write(Format.Default);
             }
         }

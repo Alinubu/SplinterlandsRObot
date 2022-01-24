@@ -32,6 +32,9 @@
     <None Update="Config\config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Config\rentcards.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Config\users.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
