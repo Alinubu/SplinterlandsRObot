@@ -1,6 +1,8 @@
 # Splinterlands RO Bot - [Discord](https://discord.gg/PrqxhN6d9j)
 ![banner](https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 
+Splinterlands RO Bot is a fast blockchain interaction based bot, rebuilt from [Ultimate-Splinterlands-Bot -2](https://github.com/PCJones/Ultimate-Splinterlands-Bot-V2).
+
 ## Bot features
 * Quests: 
 	- Bot will prioritize teams based on active quest.
