@@ -202,7 +202,7 @@ namespace SplinterlandsRObot.Game
                             if (questData.claim_trx_id == null)
                             {
                                 Logs.LogMessage($"{UserData.Username}: Trying to claim Quest Rewards", Logs.LOG_SUCCESS);
-                                if (new Quests().ClaimQuestReward(questData, UserData)) APICounter = 99;
+                                if (new Quests().ClaimQuestReward(questData, UserData, userDetails)) APICounter = 99;
                             }
                         }
                     }
@@ -618,8 +618,8 @@ namespace SplinterlandsRObot.Game
         {
             try
             {
-                int highestPossibleLeage = GetMaxLeagueByRankAndPower(userDetails.rating, userDetails.collection_power);
-                if (highestPossibleLeage > userDetails.league && userDetails.rating > 1000)
+                int highestPossibleLeague = GetMaxLeagueByRankAndPower(userDetails.rating, userDetails.collection_power);
+                if (highestPossibleLeague > userDetails.league && userDetails.rating > 1000)
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
                     APICounter = 100; // set api counter to 100 to reload details

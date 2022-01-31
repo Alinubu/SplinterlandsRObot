@@ -17,11 +17,13 @@
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
 	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
+	<DontClaimNearNextLeague>false</DontClaimNearNextLeague><!--When enabled, if rating is near a higher league and user has the power for it, it will wait to reach that league before claiming reward-->
 	<AvoidQuests>
 	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
 	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
 	</AvoidQuests>
   </Quests>
+  <PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
   <ProFeatures><!--This features are not available by default, dm me for details-->
 	<Airdrops>
 	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
@@ -41,6 +43,5 @@
 	  <TransferSps>false</TransferSps><!--Will transfer SPS currency to main account-->
 	</TransferBot>
 	<UsePrivateAPi>false</UsePrivateAPi><!--No Limit for API Calls-->
-	<UseEnemyPrediction>false</UseEnemyPrediction><!--Tries to predict enemy team-->
   </ProFeatures>
 </config>

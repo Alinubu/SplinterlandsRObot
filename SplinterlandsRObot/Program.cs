@@ -64,6 +64,10 @@ class Program
                 {
                     _ = Task.Run(async () => await new QuestsRewards().ExportQuestsRewardsAsync().ConfigureAwait(false));
                 }
+                if (command == "START-DEC-REWARDS-EXPORT")
+                {
+                    _ = Task.Run(async () => await new DecRewards().ExportDecRewards().ConfigureAwait(false));
+                }
                 if (command == "START-CLAIM-SEASON-REWARDS")
                 {
                     _ = Task.Run(async () => await new HiveActions().ClaimSeasonRewards().ConfigureAwait(false));

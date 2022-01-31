@@ -17,8 +17,10 @@ namespace SplinterlandsRObot
         public static bool LEAGUE_ADVANCE_TO_NEXT { get; set; }
         public static bool DO_QUESTS { get; set; }
         public static bool CLAIM_QUEST_REWARDS { get; set; }
+        public static bool DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE { get; set; }
         public static bool AVOID_SPECIFIC_QUESTS { get; private set; }
         public static string[]? AVOID_SPECIFIC_QUESTS_LIST { get; private set; }
+        public static string PREFERRED_SUMMONERS { get; private set; }
         public static bool COLLECT_SPS { get; set; }
         public static bool USE_RENTAL_BOT { get; set; }
         public static bool RENT_GOLD_ONLY { get; set; }
@@ -51,15 +53,16 @@ namespace SplinterlandsRObot
             LEAGUE_ADVANCE_TO_NEXT = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("League/AdvanceToNext").InnerText);
             DO_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/DoQuests").InnerText);
             CLAIM_QUEST_REWARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/ClaimRewards").InnerText);
+            DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/DontClaimNearNextLeague").InnerText);
             AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/Enabled").InnerText);
             AVOID_SPECIFIC_QUESTS_LIST = doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText != null ? doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText.Split(';') : new string[0];
+            PREFERRED_SUMMONERS = doc.DocumentElement.SelectSingleNode("PreferredSummoners").InnerText;
             COLLECT_SPS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/Airdrops/CollectSPS").InnerText);
             USE_RENTAL_BOT = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/UseRentalBot").InnerText);
             RENT_GOLD_ONLY = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RentGoldOnly").InnerText);
             MAX_PRICE_PER_500_DEC = Convert.ToDouble(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/MaxPricePer500DEC").InnerText);
             DAYS_TO_RENT = doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/DaysToRent").InnerText;
             USE_PRIVATE_API = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/UsePrivateAPi").InnerText);
-            USE_ENEMY_PREDICTION = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/UseEnemyPrediction").InnerText);
             TRANSFER_BOT_MAIN_ACCOUNT = doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/MainAccount").InnerText;
             TRANSFER_BOT_SEND_CARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/TransferCards").InnerText);
             TRANSFER_BOT_SEND_DEC = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/TransferDec").InnerText);

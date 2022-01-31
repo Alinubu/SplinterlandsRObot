@@ -30,8 +30,9 @@ namespace SplinterlandsRObot.API
                 questColor = questColor,
                 questCompleted = questCompleted,
                 playerCards = playerCards,
+                preferredSummoners = Settings.PREFERRED_SUMMONERS,
                 username = user.Username,
-                enemyData = usePrivateApi && Settings.USE_ENEMY_PREDICTION ? await new EnemyPrediction().GetEnemyData(matchDetails, user.Username) : new JObject()
+                enemyData = new JObject()
             };
 
             Uri url = new Uri(String.Format(Settings.API_URL + (usePrivateApi ? BOT_PRIVATE_API_GET_TEAM : BOT_PUBLIC_API_GET_TEAM)));

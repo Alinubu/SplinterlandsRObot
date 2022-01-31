@@ -24,10 +24,21 @@ namespace SplinterlandsRObot.Game
             return response;
         }
 
-        public bool ClaimQuestReward(QuestData questData, User user)
+        public bool ClaimQuestReward(QuestData questData, User user, UserDetails userDetails)
         {
             try
             {
+                if (Settings.DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE)
+                {
+                    int leagueRating = SplinterlandsData.splinterlandsSettings.leagues[userDetails.league + 1].min_rating;
+                    int leaguePower = SplinterlandsData.splinterlandsSettings.leagues[userDetails.league + 1].min_power;
+
+                    if(userDetails.rating >= (leagueRating - 100) && userDetails.collection_power >= leaguePower)
+                    {
+                        Logs.LogMessage($"{user.Username}: Account rating is near a higher league, quest will not be claimed!", Logs.LOG_ALERT);
+                        return false;
+                    }
+                }
                 string tx = new HiveActions().ClaimQuest(user, questData.id);
                 Logs.LogMessage($"{user.Username}: Claimed quest reward:{tx}");
                 return true;
@@ -58,7 +69,6 @@ namespace SplinterlandsRObot.Game
                     Logs.LogMessage($"{user.Username}: New Quest available, requesting from Splinterlands...");
                     if (await new HiveActions().StartQuest(user))
                     {
-                        //APICounter = 99;
                         Logs.LogMessage($"{user.Username}: New Quest started", Logs.LOG_SUCCESS);
                         return true;
                     }
