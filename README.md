@@ -13,6 +13,7 @@ Splinterlands RO Bot is a fast blockchain interaction based bot, rebuilt from [U
 	- Multiple accounts can play in parallel
 	- Energy capture rate limit
 	- Bot can wait for the ECR to recharge to a specific value befor starting to play again
+	- Option to set a list of preferred summoners that the bot will try to use when chosing teams
 * Pro features:
 	- Bot can collect Hive SPS Airdrops
 	- Transfer Bot for transfering assets to one main account (Cards, Dec, SPS)
@@ -22,6 +23,7 @@ Splinterlands RO Bot is a fast blockchain interaction based bot, rebuilt from [U
 ## Console Commands
 * START-TRANSFER-BOT (Starts the transfer process from all the accounts to the main accout)
 * START-QUEST-REWARDS-EXPORT (Start the export to Excel process for all the accounts)
+* START-DEC-REWARDS-EXPORT (Start the export to Excel for all the accounts for the last 14 days)
 * START-CLAIM-SEASON-REWARDS (Starts the process for claiming Season Rewards)
 
 Settings that can be changed withoud restarting the application (**Changes will not be saved to config file!**)
