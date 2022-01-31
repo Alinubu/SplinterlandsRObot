@@ -196,30 +196,28 @@ namespace SplinterlandsRObot.Hive
 
                             CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
                             string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
-                            for (int i = 0; i < 10; i++)
+                            
+                            await Task.Delay(15000);
+                            var rewardsRaw = await sp_api.GetTransactionDetails(tx);
+                            if (rewardsRaw.Contains(" not found"))
                             {
-                                await Task.Delay(15000);
-                                var rewardsRaw = await sp_api.GetTransactionDetails(tx);
-                                if (rewardsRaw.Contains(" not found"))
-                                {
-                                    continue;
-                                }
-                                else if (rewardsRaw.Contains("has already claimed their rewards from the specified season"))
-                                {
-                                    Logs.LogMessage($"[Season Rewards] {user.Username}: Rewards already claimed!", Logs.LOG_ALERT);
-                                }
-                                var rewards = JToken.Parse(rewardsRaw)["trx_info"]["result"];
+                                continue;
+                            }
+                            else if (rewardsRaw.Contains("has already claimed their rewards from the specified season"))
+                            {
+                                Logs.LogMessage($"[Season Rewards] {user.Username}: Rewards already claimed!", Logs.LOG_ALERT);
+                            }
+                            var rewards = JToken.Parse(rewardsRaw)["trx_info"]["result"];
 
 
-                                if (!((string)rewards).Contains("success\":true"))
-                                {
-                                    Logs.LogMessage($"[Season Rewards] {user.Username}: Error at claiming season rewards: " + (string)rewards, Logs.LOG_WARNING);
+                            if (!((string)rewards).Contains("success\":true"))
+                            {
+                                Logs.LogMessage($"[Season Rewards] {user.Username}: Error at claiming season rewards: " + (string)rewards, Logs.LOG_WARNING);
 
-                                }
-                                else if (((string)rewards).Contains("success\":true"))
-                                {
-                                    Logs.LogMessage($"[Season Rewards] {user.Username}: Successfully claimed season rewards!", Logs.LOG_SUCCESS);
-                                }
+                            }
+                            else if (((string)rewards).Contains("success\":true"))
+                            {
+                                Logs.LogMessage($"[Season Rewards] {user.Username}: Successfully claimed season rewards!", Logs.LOG_SUCCESS);
                             }
                         }
                     }

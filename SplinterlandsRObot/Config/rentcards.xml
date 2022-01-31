@@ -40,4 +40,12 @@
 		<rent_days>1</rent_days>
 		<currency>DEC</currency>
 	</card>
+	<card>
+		<card_detail_id>91</card_detail_id>
+		<card_edition>Reward</card_edition>
+		<is_gold>false</is_gold>
+		<price_limit>0.16</price_limit>
+		<rent_days>1</rent_days>
+		<currency>DEC</currency>
+	</card>
 </cards>

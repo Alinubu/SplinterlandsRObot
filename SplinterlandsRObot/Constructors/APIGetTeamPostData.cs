@@ -8,6 +8,7 @@ namespace SplinterlandsRObot.Constructors
         public string questColor { get; set; }
         public bool questCompleted { get; set; }
         public CardsCollection playerCards { get; set; }
+        public string preferredSummoners { get; set; }
         public string username { get; set; }
         public JToken? enemyData { get; set; }
     }
