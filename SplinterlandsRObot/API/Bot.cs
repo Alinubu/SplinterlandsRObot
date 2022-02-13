@@ -22,17 +22,18 @@ namespace SplinterlandsRObot.API
             }
             return Convert.ToBoolean(result);
         }
-        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, User user, bool usePrivateApi)
+        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool usePrivateApi)
         {
+
             APIGetTeamPostData data = new APIGetTeamPostData()
             {
                 matchDetails = matchDetails,
-                questColor = questColor,
-                questCompleted = questCompleted,
+                questDetails = new JObject() { new JProperty("quest_color", questColor), new JProperty("quest_completed", questCompleted), new JProperty("do_quest", Settings.DO_QUESTS) },
                 playerCards = playerCards,
                 preferredSummoners = Settings.PREFERRED_SUMMONERS,
-                username = user.Username,
-                enemyData = new JObject()
+                username = user,
+                league = league,
+                replaceStarterCards = Settings.REPLACE_STARTER_CARDS
             };
 
             Uri url = new Uri(String.Format(Settings.API_URL + (usePrivateApi ? BOT_PRIVATE_API_GET_TEAM : BOT_PUBLIC_API_GET_TEAM)));
@@ -51,17 +52,17 @@ namespace SplinterlandsRObot.API
 
             if (responseString.Contains("API Limit exceeded"))
             {
-                Logs.LogMessage($"{user.Username}: Public api limit Reached", Logs.LOG_ALERT);
+                Logs.LogMessage($"{user}: Public api limit Reached", Logs.LOG_ALERT);
                 return null;
             }
             else if (responseString.Contains("Timeout, api overloaded"))
             {
-                Logs.LogMessage($"{user.Username}: Api timout, contact support", Logs.LOG_WARNING);
+                Logs.LogMessage($"{user}: Api timout, contact support", Logs.LOG_WARNING);
                 return null;
             }
             else if (responseString.Contains("User not allowed to use Premium features. Please subscribe"))
             {
-                Logs.LogMessage($"{user.Username}: User not allowed to use Premium features. Please subscribe", Logs.LOG_WARNING);
+                Logs.LogMessage($"{user}: User not allowed to use Premium features. Please subscribe", Logs.LOG_WARNING);
                 return null;
             }
 

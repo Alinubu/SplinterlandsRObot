@@ -21,6 +21,7 @@ namespace SplinterlandsRObot
         public static bool AVOID_SPECIFIC_QUESTS { get; private set; }
         public static string[]? AVOID_SPECIFIC_QUESTS_LIST { get; private set; }
         public static string PREFERRED_SUMMONERS { get; private set; }
+        public static bool REPLACE_STARTER_CARDS { get; set; }
         public static bool COLLECT_SPS { get; set; }
         public static bool USE_RENTAL_BOT { get; set; }
         public static bool RENT_GOLD_ONLY { get; set; }
@@ -39,7 +40,7 @@ namespace SplinterlandsRObot
         public static void ParseConfigFile()
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(Path.Combine(Constants.CONFIG_FOLDER, "config.xml"));
+            doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "config.xml"));
 
             MAX_THREADS = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("MaxThreads").InnerText);
             HOLD_CACHE_FOR = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("HoldCacheFor").InnerText);
@@ -57,6 +58,7 @@ namespace SplinterlandsRObot
             AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/Enabled").InnerText);
             AVOID_SPECIFIC_QUESTS_LIST = doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText != null ? doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText.Split(';') : new string[0];
             PREFERRED_SUMMONERS = doc.DocumentElement.SelectSingleNode("PreferredSummoners").InnerText;
+            REPLACE_STARTER_CARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ReplaceStarterCards").InnerText);
             COLLECT_SPS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/Airdrops/CollectSPS").InnerText);
             USE_RENTAL_BOT = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/UseRentalBot").InnerText);
             RENT_GOLD_ONLY = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RentGoldOnly").InnerText);

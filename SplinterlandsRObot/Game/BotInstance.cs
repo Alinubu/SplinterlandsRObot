@@ -142,72 +142,71 @@ namespace SplinterlandsRObot.Game
                 }
 
                 if (Settings.DO_QUESTS)
-                {
                     Logs.LogMessage($"{UserData.Username}: Quests enabled", Logs.LOG_SUCCESS, true);
 
-                    questData = await SP_API.GetQuestData(UserData.Username);
-                    if (await new Quests().CheckForNewQuest(questData, UserData, questCompleted))
+                questData = await SP_API.GetQuestData(UserData.Username);
+                if (await new Quests().CheckForNewQuest(questData, UserData, questCompleted))
+                {
+                    questRenewed = false;
+                    APICounter = 99;
+                }
+
+                if (questData != null)
+                {
+                    questColor = quests.GetQuestColor(questData.name);
+                    questProgress = quests.GetQuestProgress(questData.completed_items, questData.total_items);
+                    if (questProgress.Split(':').GetValue(0).ToString() == "Completed")
                     {
-                        questRenewed = false;
-                        APICounter = 99;
-                    }
-
-                    if (questData != null)
-                    {
-                        questColor = quests.GetQuestColor(questData.name);
-
-                        if (Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
-                        {
-                            if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
-                            {
-                                Logs.LogMessage($"{UserData.Username}: Quest blacklisted, requesting a new one...", Logs.LOG_ALERT);
-                                if (await new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
-                                {
-                                    Logs.LogMessage($"{UserData.Username}: New Quest received", Logs.LOG_SUCCESS);
-                                    questRenewed = true;
-                                    questData = await SP_API.GetQuestData(UserData.Username);
-                                    questColor = quests.GetQuestColor(questData.name);
-                                    APICounter = 99;
-                                }
-                                else
-                                {
-                                    Logs.LogMessage($"{UserData.Username}: Error requesting new Quest", Logs.LOG_WARNING);
-                                }
-                            }
-                        }
-
-                        questProgress = quests.GetQuestProgress(questData.completed_items, questData.total_items);
-                        Logs.LogMessage($"{UserData.Username}: Current Quest[{questColor}]:{questData.name} - {questProgress}", Logs.LOG_ALERT, true);
-                        if (questProgress.Split(':').GetValue(0).ToString() == "Completed")
-                        {
-                            questCompleted = true;
-                        }
-                        else
-                        {
-                            questCompleted = false;
-                        }
-
-                        InstanceManager.UsersStatistics[botInstance].Quest = $"{questData.completed_items}/{questData.total_items}[{questColor}]";
+                        questCompleted = true;
                     }
                     else
                     {
-                        Logs.LogMessage($"{UserData.Username}: Having issues requesting Quest info", Logs.LOG_WARNING);
                         questCompleted = false;
                     }
 
-                    if (questCompleted)
+                    if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
                     {
-                        if (Settings.CLAIM_QUEST_REWARDS)
+                        if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
                         {
-                            if (questData.claim_trx_id == null)
+                            Logs.LogMessage($"{UserData.Username}: Quest blacklisted, requesting a new one...", Logs.LOG_ALERT);
+                            if (await new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
                             {
-                                Logs.LogMessage($"{UserData.Username}: Trying to claim Quest Rewards", Logs.LOG_SUCCESS);
-                                if (new Quests().ClaimQuestReward(questData, UserData, userDetails)) APICounter = 99;
+                                Logs.LogMessage($"{UserData.Username}: New Quest received", Logs.LOG_SUCCESS);
+                                questRenewed = true;
+                                questData = await SP_API.GetQuestData(UserData.Username);
+                                questColor = quests.GetQuestColor(questData.name);
+                                APICounter = 99;
+                            }
+                            else
+                            {
+                                Logs.LogMessage($"{UserData.Username}: Error requesting new Quest", Logs.LOG_WARNING);
                             }
                         }
                     }
+
+                    if (Settings.DO_QUESTS)
+                        Logs.LogMessage($"{UserData.Username}: Current Quest[{questColor}]:{questData.name} - {questProgress}", Logs.LOG_ALERT, true);
+
+                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questData.completed_items}/{questData.total_items}[{questColor}]";
+                }
+                else
+                {
+                    Logs.LogMessage($"{UserData.Username}: Having issues requesting Quest info", Logs.LOG_WARNING);
+                    questCompleted = false;
                 }
 
+                if (questCompleted)
+                {
+                    if (Settings.CLAIM_QUEST_REWARDS)
+                    {
+                        if (questData.claim_trx_id == null)
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Trying to claim Quest Rewards", Logs.LOG_SUCCESS);
+                            if (new Quests().ClaimQuestReward(questData, UserData, userDetails)) APICounter = 99;
+                        }
+                    }
+                }
+                
                 Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is { userDetails.capture_rate}%", supress: true);
                 
                 if (!waitToRechargeECR)
@@ -327,26 +326,26 @@ namespace SplinterlandsRObot.Game
                             Logs.LogMessage($"{UserData.Username}: Fetching team from private api");
                             try
                             {
-                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData, true);
+                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, true);
                             }
                             catch (Exception ex)
                             {
                                 Logs.LogMessage($"{UserData.Username}: Error fetching team from private api. Trying on public api", Logs.LOG_ALERT);
-                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData, false);
+                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, false);
                             }
                         }
                         else
                         {
                             Logs.LogMessage($"{UserData.Username}: Fetching team from public api");
-                            team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData, false);
+                            team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, false);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Logs.LogMessage(ex.Message, Logs.LOG_WARNING);
+                        Logs.LogMessage(ex.Message, Logs.LOG_WARNING,true);
                     }
 
-                    if (team == null)
+                    if (!team.HasValues)
                     {
                         Logs.LogMessage($"{UserData.Username}: API couldn't find any team - Skipping Account", Logs.LOG_WARNING);
                         SleepUntil = DateTime.Now.AddMinutes(5);
@@ -641,41 +640,41 @@ namespace SplinterlandsRObot.Game
         private int GetMaxLeagueByRankAndPower(int rating, int power)
         {
             // bronze
-            if ((rating is >= 100 and <= 399) && (power is >= 0))
+            if ((rating is >= 100) && (power is >= 0 and < 1000))
             {
                 return 1;
             }
-            if ((rating is >= 400 and <= 699) && (power is >= 1000))
+            if ((rating is >= 400) && (power is >= 1000 and < 5000))
             {
                 return 2;
             }
-            if ((rating is >= 700 and <= 999) && (power is >= 5000))
+            if ((rating is >= 700) && (power is >= 5000 and < 15000))
             {
                 return 3;
             }
             // silver
-            if ((rating is >= 1000 and <= 1299) && (power is >= 15000))
+            if ((rating is >= 1000) && (power is >= 15000 and < 40000))
             {
                 return 4;
             }
-            if ((rating is >= 1300 and <= 1599) && (power is >= 40000))
+            if ((rating is >= 1300) && (power is >= 40000 and < 70000))
             {
                 return 5;
             }
-            if ((rating is >= 1600 and <= 1899) && (power is >= 70000))
+            if ((rating is >= 1600) && (power is >= 70000 and < 100000))
             {
                 return 6;
             }
             // gold
-            if ((rating is >= 1900 and <= 2199) && (power is >= 100000))
+            if ((rating is >= 1900) && (power is >= 100000 and < 150000))
             {
                 return 7;
             }
-            if ((rating is >= 2200 and <= 2499) && (power is >= 150000))
+            if ((rating is >= 2200) && (power is >= 150000 and < 200000))
             {
                 return 8;
             }
-            if ((rating is >= 2500 and <= 2799) && (power is >= 200000))
+            if ((rating is >= 2500) && (power is >= 200000))
             {
                 return 9;
             }

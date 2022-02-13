@@ -24,6 +24,7 @@
 	</AvoidQuests>
   </Quests>
   <PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
+  <ReplaceStarterCards>true</ReplaceStarterCards><!---->
   <ProFeatures><!--This features are not available by default, dm me for details-->
 	<Airdrops>
 	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
@@ -35,7 +36,7 @@
 	  <DaysToRent>1</DaysToRent>
 	</RentalBot>
 	<TransferBot>
-	  <MainAccount>username</MainAccount><!--The main account you want the assets to be transfered to-->
+	  <MainAccount>YourMainUser</MainAccount><!--The main account you want the assets to be transfered to-->
 	  <TransferCards>false</TransferCards><!--Will transfer all user Cards, if you want some cards to not be transfered, you need to lock them-->
 	  <TransferDec>false</TransferDec><!--Will transfer DEC currency to main account-->
 	  <KeepDecAmount>15</KeepDecAmount><!--The amount of DEC you want to keed for one account-->
