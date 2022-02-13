@@ -150,5 +150,6 @@ class Program
         }
         await Task.WhenAll(instances);
         Logs.LogMessage("Bot stopped!");
+        Environment.Exit(0);
     }
 }

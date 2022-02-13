@@ -16,7 +16,7 @@ namespace SplinterlandsRObot
         {
             Logs.LogMessage("Loading users data, this may take a while...");
             XmlDocument doc = new XmlDocument();
-            doc.Load(Path.Combine(Constants.CONFIG_FOLDER, "users.xml"));
+            doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "users.xml"));
 
             foreach (XmlNode node in doc.DocumentElement.SelectNodes("user"))
             {

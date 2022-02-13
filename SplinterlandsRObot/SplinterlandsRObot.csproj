@@ -15,27 +15,19 @@
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.95.4" />
     <PackageReference Include="ConsoleTables" Version="2.4.2" />
+    <PackageReference Include="HiveAPI.CS" Version="1.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Websocket.Client" Version="4.4.43" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Cryptography.ECDSA">
-      <HintPath>..\..\..\Users\studi\Downloads\hive-net-master\hive-net-master\Libraries\Cryptography.ECDSA.dll</HintPath>
-    </Reference>
-    <Reference Include="HiveAPI">
-      <HintPath>..\..\..\Users\studi\Downloads\hive-net-master\hive-net-master\Libraries\HiveAPI.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Config\config.xml">
+    <None Update="Config\config_example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Config\rentcards.xml">
+    <None Update="Config\rentcards_example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Config\users.xml">
+    <None Update="Config\users_example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
