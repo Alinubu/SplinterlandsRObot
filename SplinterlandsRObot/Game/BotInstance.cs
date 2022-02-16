@@ -639,44 +639,25 @@ namespace SplinterlandsRObot.Game
         }
         private int GetMaxLeagueByRankAndPower(int rating, int power)
         {
-            // bronze
-            if ((rating is >= 100) && (power is >= 0 and < 1000))
+            //champion
+            if ((rating is >= 3700) && (power is >= 500000))
             {
-                return 1;
+                return 13;
             }
-            if ((rating is >= 400) && (power is >= 1000 and < 5000))
+            //diamong
+            if ((rating is >= 2800) && (power is >= 250000))
             {
-                return 2;
+                return 10;
             }
-            if ((rating is >= 700) && (power is >= 5000 and < 15000))
-            {
-                return 3;
-            }
-            // silver
-            if ((rating is >= 1000) && (power is >= 15000 and < 40000))
-            {
-                return 4;
-            }
-            if ((rating is >= 1300) && (power is >= 40000 and < 70000))
-            {
-                return 5;
-            }
-            if ((rating is >= 1600) && (power is >= 70000 and < 100000))
-            {
-                return 6;
-            }
-            // gold
-            if ((rating is >= 1900) && (power is >= 100000 and < 150000))
+            //gold
+            if ((rating is >= 1900) && (power is >= 100000))
             {
                 return 7;
             }
-            if ((rating is >= 2200) && (power is >= 150000 and < 200000))
+            //silver
+            if ((rating is >= 1000) && (power is >= 15000))
             {
-                return 8;
-            }
-            if ((rating is >= 2500) && (power is >= 200000))
-            {
-                return 9;
+                return 4;
             }
 
             return 0;
