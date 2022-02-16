@@ -1,7 +1,7 @@
 # Splinterlands RO Bot - [Discord](https://discord.gg/PrqxhN6d9j)
 ![banner](https://d36mxiodymuqjm.cloudfront.net/website/home/bg_home_hero_chaos.jpg)
 
-Splinterlands RO Bot is a fast blockchain interaction based bot, rebuilt from [Ultimate-Splinterlands-Bot -2](https://github.com/PCJones/Ultimate-Splinterlands-Bot-V2).
+Splinterlands RO Bot is a fast Battle-API interaction based bot, rebuilt from [Ultimate-Splinterlands-Bot -2](https://github.com/PCJones/Ultimate-Splinterlands-Bot-V2).
 
 ## Bot features
 * Quests: 
@@ -14,11 +14,12 @@ Splinterlands RO Bot is a fast blockchain interaction based bot, rebuilt from [U
 	- Energy capture rate limit
 	- Bot can wait for the ECR to recharge to a specific value befor starting to play again
 	- Option to set a list of preferred summoners that the bot will try to use when chosing teams
+	- Replacement of starter cards with similar higher level cards from the user collection if rulesets allow it
 * Pro features:
 	- Bot can collect Hive SPS Airdrops
 	- Transfer Bot for transfering assets to one main account (Cards, Dec, SPS)
-	- Bot will try to predict the enemy team to increase the chances of winning !experimental feature
 	- Quest rewards export to Excel for the past 30 days
+	- DEC rewards export to Excel
 
 ## Console Commands
 * START-TRANSFER-BOT (Starts the transfer process from all the accounts to the main accout)
@@ -38,7 +39,6 @@ Settings that can be changed withoud restarting the application (**Changes will 
 * DO_QUESTS=true/false
 * COLLECT_SPS=true/false
 * USE_PRIVATE_API=true/false
-* USE_ENEMY_PREDICTION=true/false
 * TRANSFER_BOT_MAIN_ACCOUNT=TEXT(USERNAME)
 * TRANSFER_BOT_SEND_CARDS=true/false
 * TRANSFER_BOT_SEND_DEC=true/false
@@ -49,9 +49,9 @@ Settings that can be changed withoud restarting the application (**Changes will 
 ## Setup guide
 - Download the lates version from [Release page](https://github.com/Alinubu/SplinterlandsRObot/releases)
 - Unzip the downloaded file
-- Open users.xml with your favorite text editor and fill the required user data
-- Open config.xml with your favorite text editor and adjust the settings to your needs
-- Linux Only! Run ****sudo chmod +x SplinterlandsRObot**** before starting the bot
+- Open users_example.xml with your favorite text editor and fill the required user data and save it as users.xml
+- Open config_example.xml with your favorite text editor and adjust the settings to your needs and save it as config.xml
+- Linux/Mac Only! Run ****sudo chmod +x SplinterlandsRObot**** before starting the bot
 - Run the SplinterlandsRObot file
 
 ## Config settings
