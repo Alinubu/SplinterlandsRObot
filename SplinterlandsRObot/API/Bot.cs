@@ -11,6 +11,7 @@ namespace SplinterlandsRObot.API
         const string BOT_PUBLIC_API_GET_TEAM = "/api/public/PublicTeam/";
         const string BOT_PRIVATE_API_GET_TEAM = "/api/private/PrivateTeam/";
         const string BOT_PUBLIC_API_CHECK_LIMIT = "/api/public/CheckPublicAPILimit";
+        const string BOT_STATS_SYNC = "/api/stats/SyncBotStats";
 
         public async Task<bool> CheckPublicAPILimit()
         {
@@ -88,6 +89,42 @@ namespace SplinterlandsRObot.API
             };
 
             return token;
+        }
+
+        public async Task SyncUserStats(string passKey, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                Thread.Sleep(300000);
+                APISyncStatsPostData data = new APISyncStatsPostData()
+                {
+                    PassKey = passKey,
+                    UserStats = InstanceManager.UsersStatistics.ToList()
+                };
+
+                Uri url = new Uri(String.Format(Settings.API_URL + BOT_STATS_SYNC));
+
+                JObject obj = new JObject()
+                {
+                    new JProperty("json",JsonConvert.SerializeObject(data))
+                };
+
+                string json = JsonConvert.SerializeObject(obj);
+
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                var response = await HttpWebRequest.client.PostAsync(url, content);
+
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                if (responseString.Contains("Error syncing stats"))
+                {
+                    Logs.LogMessage("[UserStatsSync]: Error syncing stats", Logs.LOG_ALERT);
+                }
+                else
+                {
+                    Logs.LogMessage("[UserStatsSync]: Sync completed.", supress: true);
+                }
+            }
         }
     }
 }

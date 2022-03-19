@@ -448,6 +448,4 @@
         public int current_airdrop_day { get; set; }
         public double sps_per_day { get; set; }
     }
-
-    
 }

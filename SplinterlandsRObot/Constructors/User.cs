@@ -6,7 +6,9 @@
         public PassCodes PassCodes { get; set; }
         public bool UseRentBot { get; set; }
         public int? PowerLimit { get; set; }
-        public List<Card>? RentDetails { get; set; }
+        public double ECROverride { get; set; }
+        public int MaxLeague { get; set; }
+        public string RentFile { get; set; }
     }
     public class PassCodes
     {

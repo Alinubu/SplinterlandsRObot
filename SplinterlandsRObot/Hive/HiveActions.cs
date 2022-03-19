@@ -146,6 +146,31 @@ namespace SplinterlandsRObot.Hive
             return true;
         }
 
+        public bool SurrenderBattle(string battleId, User user)
+        {
+            try
+            {
+                string n = RandomString(10);
+                string json = "{\"battle_queue_id\":\"" + battleId + "\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
+                Logs.LogMessage($"{user.Username}: Surrendering battle...");
+                COperations.custom_json custom_json = CreateCustomJson(user, false, true, "sm_surrender", json);
+                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_json }, new string[] { user.PassCodes.PostingKey });
+                var postData = GetStringForSplinterlandsAPI(oTransaction);
+                var response = HttpWebRequest.WebRequestPost(InstanceManager.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "https://splinterlands.com/", Encoding.UTF8);
+                string responseTx = DoQuickRegex("id\":\"(.*?)\"", response);
+
+                if (responseTx == "")
+                    return false;
+            }
+            catch (Exception ex)
+            {
+                Logs.LogMessage($"{user.Username}: Error surrendering battle: " + ex.ToString(), Logs.LOG_WARNING);
+                return false;
+            }
+
+            return true;
+        }
+
         public COperations.custom_json CreateCustomJson(User user, bool activeKey, bool postingKey, string methodName, string json)
         {
             COperations.custom_json customJsonOperation = new COperations.custom_json
@@ -163,7 +188,7 @@ namespace SplinterlandsRObot.Hive
             Splinterlands sp_api = new();
             try
             {
-                foreach (User user in Users.userList)
+                foreach (User user in InstanceManager.userList)
                 {
                     Logs.LogMessage($"[Season Rewards] {user.Username}: Checking for season rewards... ", supress: true);
                     var bid = "bid_" + RandomString(20);

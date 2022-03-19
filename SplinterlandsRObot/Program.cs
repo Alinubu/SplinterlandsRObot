@@ -8,6 +8,7 @@ class Program
 {
     private static readonly object _TaskLock = new();
     private static object _SleepInfoLock = new();
+    private static string identifier;
     static Task Main(string[] args)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -30,12 +31,14 @@ class Program
             }
         }
 
+        identifier = GetMachineIdentifier();
+
         Settings.ParseConfigFile();
         Logs.LogMessage("Config file loaded", Logs.LOG_SUCCESS);
         SplinterlandsData.splinterlandsCards = Task.Run(() => new Splinterlands().GetSplinterlandsCards()).Result;
         SplinterlandsData.splinterlandsSettings = Task.Run(() => new Splinterlands().GetSplinterlandsSettings()).Result;
         InstanceManager.CreateUsersInstance();
-        InstanceManager.CreateBotInstances(Users.userList);
+        InstanceManager.CreateBotInstances(InstanceManager.userList);
         Settings.CheckThreads();
         CancellationTokenSource cancellationTokenSource = new();
         CancellationToken token = cancellationTokenSource.Token;
@@ -48,6 +51,12 @@ class Program
         };
 
         _ = Task.Run(async () => await StartBot(token)).ConfigureAwait(false);
+
+        if (Settings.USE_RENTAL_BOT)
+            _ = Task.Run(async () => await new RentProcess().StartRentingProcess(token).ConfigureAwait(false));
+
+        if (Settings.SYNC_BOT_STATS && Settings.DO_BATTLE)
+            _ = Task.Run(async () => await new Bot().SyncUserStats(identifier, token).ConfigureAwait(false));
 
         string? command = "";
         while (true)
@@ -91,6 +100,7 @@ class Program
         bool firstRuntrough = true;
         DateTime[] sleepInfo = new DateTime[InstanceManager.BotInstances.Count];
         Logs.LogMessage("Starting Bot");
+        
         while (!token.IsCancellationRequested)
         {
             while (instances.Count < Settings.MAX_THREADS && !token.IsCancellationRequested)
@@ -103,7 +113,7 @@ class Program
                         {
                             firstRuntrough = false;
                             nextBotInstance = 0;
-                            if(Settings.SHOW_BATTLE_RESULTS) Logs.OutputStat();
+                            if (Settings.SHOW_BATTLE_RESULTS && Settings.DO_BATTLE) Logs.OutputStat();
                         }
 
                         while (InstanceManager.BotInstances.All(x => x.CurrentlyActive
@@ -151,5 +161,34 @@ class Program
         await Task.WhenAll(instances);
         Logs.LogMessage("Bot stopped!");
         Environment.Exit(0);
+    }
+
+    private static string GetMachineIdentifier()
+    {
+        string fileName = "passkey.txt";
+        string id = "";
+        if (File.Exists(fileName))
+        {
+            id = File.ReadLines(fileName).First();
+        }
+
+        if (id != "")
+            return id;
+
+        id = new HiveActions().GenerateMD5Hash( 
+            Environment.CurrentDirectory +
+            Environment.MachineName +
+            Environment.OSVersion +
+            Environment.WorkingSet +
+            Environment.UserName +
+            Environment.ProcessorCount + 
+            Environment.SystemPageSize + 
+            DateTime.Now.ToBinary() +
+            new HiveActions().RandomString(20));
+
+        File.AppendAllText(fileName, id);
+
+        return id;
+
     }
 }

@@ -21,9 +21,11 @@ namespace SplinterlandsRObot.Game
         private Bot BOT_API;
         private DateTime LastCacheUpdate;
         private UserDetails userDetails;
+        private UserBalance userBalance;
         private QuestData questData;
         private Quests quests;
         private CardsCollection CardsCached;
+        private double ECRLimit = 0;
         private string questColor = "";
         private string questProgress = "";
         private bool questCompleted = false;
@@ -31,17 +33,20 @@ namespace SplinterlandsRObot.Game
         private string currentSeason = "";
         private bool waitToRechargeECR = false;
         private DateTime SleepUntil;
+        private object _activeLock = new();
 
         public BotInstance(User user, int instanceIndex)
         {
             UserData = user;
             InstanceIndex = instanceIndex;
             SleepUntil = DateTime.Now.AddMinutes((Settings.SLEEP_BETWEEN_BATTLES + 1) * -1);
+            ECRLimit = UserData.ECROverride == 0 ? Settings.ECR_LIMIT : UserData.ECROverride;
             APICounter = 99;
             SP_API = new();
             BOT_API = new();
             LastCacheUpdate = DateTime.MinValue;
             userDetails = new();
+            userBalance = new();
             questData = new();
             quests = new();
             CardsCached = new();
@@ -49,7 +54,8 @@ namespace SplinterlandsRObot.Game
             InstanceManager.UsersStatistics.Add(new UserStats()
             {
                 Account = UserData.Username,
-                ECR = 0,
+                Balance = new(),
+                RentCost = 0,
                 Wins = 0,
                 Draws = 0,
                 Losses = 0,
@@ -57,7 +63,9 @@ namespace SplinterlandsRObot.Game
                 TotalRewards = 0,
                 Rating = 0,
                 RatingChange = "",
+                League = "",
                 Quest = "",
+                HoursUntilNextQuest = "N/A",
                 NextMatchIn = SleepUntil,
                 ErrorMessage = ""
             });
@@ -67,8 +75,6 @@ namespace SplinterlandsRObot.Game
             }
         }
         #endregion
-
-        private object _activeLock = new();
 
         public async Task<DateTime> DoBattleAsync(int botInstance)
         {
@@ -92,6 +98,12 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
+                if (InstanceManager.RentingQueue.ContainsKey(UserData.Username) && !Settings.BATTLE_WHILE_RENTING)
+                {
+                    SleepUntil = DateTime.Now.AddMinutes(5);
+                    return SleepUntil;
+                }
+
                 if (!Settings.WINDOWS7)
                 {
                     await webSocketClient.WebsocketStart();
@@ -101,38 +113,52 @@ namespace SplinterlandsRObot.Game
                 APICounter++;
                 if (APICounter >= 10 || (DateTime.Now - LastCacheUpdate).TotalMinutes >= Settings.HOLD_CACHE_FOR)
                 {
-                    APICounter = 0;
-                    LastCacheUpdate = DateTime.Now;
-                    userDetails = await SP_API.GetUserDetails(UserData.Username);
-                    userDetails.capture_rate = await SP_API.GetPlayerECRAsync(UserData.Username);
-                    CardsCached = await SP_API.GetUserCardsCollection(UserData.Username);
-                    if (Settings.COLLECT_SPS && !Settings.WINDOWS7)
+                    if (Settings.DO_BATTLE)
                     {
-                        await new CollectSPS().ClaimSPS(UserData);
+                        APICounter = 0;
+                        LastCacheUpdate = DateTime.Now;
+                        userDetails = await SP_API.GetUserDetails(UserData.Username);
+                        userBalance = await SP_API.GetPlayerBalancesAsync(UserData.Username);
+                        CardsCached = await SP_API.GetUserCardsCollection(UserData.Username);
+                        if (Settings.COLLECT_SPS && !Settings.WINDOWS7)
+                        {
+                            await new CollectSPS().ClaimSPS(UserData);
+                        }
+
+                        InstanceManager.UsersStatistics[botInstance].Balance = userBalance;
+                        InstanceManager.UsersStatistics[botInstance].Account = UserData.Username;
+                        InstanceManager.UsersStatistics[botInstance].Rating = userDetails.rating;
+                        InstanceManager.UsersStatistics[botInstance].League = SplinterlandsData.splinterlandsSettings.leagues[userDetails.league].name;
+                        InstanceManager.UsersStatistics[botInstance].CollectionPower = userDetails.collection_power;
                     }
-
-                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate != null ? (double)userDetails.capture_rate : 0, 2);
-                    InstanceManager.UsersStatistics[botInstance].Account = UserData.Username;
-                    InstanceManager.UsersStatistics[botInstance].Rating = userDetails.rating;
-                    InstanceManager.UsersStatistics[botInstance].CollectionPower = userDetails.collection_power;
                 }
-
-                if(Settings.LEAGUE_ADVANCE_TO_NEXT) await AdvanceLeague();
 
                 if (Settings.USE_RENTAL_BOT)
                 {
                     try
                     {
-                        RentProcess rent = new();
-                        if(userDetails.collection_power < UserData.PowerLimit) Logs.LogMessage($"{UserData.Username}: CP is below limit, starting rent process", Logs.LOG_ALERT);
-                        while(userDetails.collection_power < UserData.PowerLimit)
+                        if (userDetails.collection_power < UserData.PowerLimit)
                         {
-                            if (await rent.StartRentProcess(userDetails, UserData, CardsCached))
+                            if (!InstanceManager.RentingQueue.ContainsKey(UserData.Username))
                             {
-                                CardsCached = await SP_API.GetUserCardsCollection(UserData.Username);
-                                userDetails = await SP_API.GetUserDetails(UserData.Username);
+                                Logs.LogMessage($"{UserData.Username}: CP is below limit, user added to renting queue", Logs.LOG_ALERT);
+                                InstanceManager.RentingQueue.Add(UserData.Username, (Settings.DO_BATTLE ? userDetails.collection_power : SP_API.GetUserDetails(UserData.Username).Result.collection_power));
+                            }
+                            else
+                            {
+                                Logs.LogMessage($"{UserData.Username}: CP is below limit, user already in renting queue", Logs.LOG_ALERT);
+                            }
+                                
+                            if (!Settings.BATTLE_WHILE_RENTING)
+                            {
+                                SleepUntil = DateTime.Now.AddMinutes(5);
+                                return SleepUntil;
                             }
                             APICounter = 99;
+                        }
+                        else
+                        {
+                            Logs.LogMessage($"{UserData.Username}: CP OK, account ready for battle.", Logs.LOG_SUCCESS);
                         }
                     }
                     catch (Exception)
@@ -141,16 +167,25 @@ namespace SplinterlandsRObot.Game
                     }
                 }
 
+                if (!Settings.DO_BATTLE)
+                {
+                    SleepUntil = DateTime.Now.AddMinutes(5);
+                    return SleepUntil;
+                }
+
+                if (Settings.LEAGUE_ADVANCE_TO_NEXT) await AdvanceLeague();
+
                 if (Settings.DO_QUESTS)
                     Logs.LogMessage($"{UserData.Username}: Quests enabled", Logs.LOG_SUCCESS, true);
 
                 questData = await SP_API.GetQuestData(UserData.Username);
+
                 if (await new Quests().CheckForNewQuest(questData, UserData, questCompleted))
                 {
                     questRenewed = false;
-                    APICounter = 99;
+                    questData = await SP_API.GetQuestData(UserData.Username);
                 }
-
+                    
                 if (questData != null)
                 {
                     questColor = quests.GetQuestColor(questData.name);
@@ -188,6 +223,7 @@ namespace SplinterlandsRObot.Game
                         Logs.LogMessage($"{UserData.Username}: Current Quest[{questColor}]:{questData.name} - {questProgress}", Logs.LOG_ALERT, true);
 
                     InstanceManager.UsersStatistics[botInstance].Quest = $"{questData.completed_items}/{questData.total_items}[{questColor}]";
+                    InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (23 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours).ToString();
                 }
                 else
                 {
@@ -202,40 +238,64 @@ namespace SplinterlandsRObot.Game
                         if (questData.claim_trx_id == null)
                         {
                             Logs.LogMessage($"{UserData.Username}: Trying to claim Quest Rewards", Logs.LOG_SUCCESS);
-                            if (new Quests().ClaimQuestReward(questData, UserData, userDetails)) APICounter = 99;
+                            if (await new Quests().ClaimQuestReward(questData, UserData, userDetails)) APICounter = 99;
                         }
+                    }
+
+                    if (Settings.SLEEP_AFTER_QUEST_COMPLETED && questCompleted)
+                    {
+                        Logs.LogMessage($"{UserData.Username}: Quest completed. Account will be skipped until new quest available", Logs.LOG_ALERT);
+                        SleepUntil = DateTime.Now.AddMinutes(15);
+                        return SleepUntil;
                     }
                 }
                 
-                Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is { userDetails.capture_rate}%", supress: true);
+                Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {userBalance.ECR}%", supress: true);
                 
                 if (!waitToRechargeECR)
                 {
-                    if ((userDetails.capture_rate) < Settings.ECR_LIMIT)
+                    if ((userBalance.ECR) < ECRLimit)
                     {
-
-                        Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{userDetails.capture_rate}%/{Settings.ECR_LIMIT}%] ", Logs.LOG_ALERT);
-                        SleepUntil = DateTime.Now.AddMinutes(5);
-                        await Task.Delay(1500);
-                        if (Settings.ECR_WAIT_TO_RECHARGE)
+                        if (!Settings.IGNORE_ECR_LIMIT_FOR_QUEST)
                         {
-                            waitToRechargeECR = true;
-                            Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_ALERT);
+                            Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(userBalance.ECR)}%/{Settings.ECR_LIMIT}%] ", Logs.LOG_ALERT);
+                            SleepUntil = DateTime.Now.AddMinutes(5);
+                            await Task.Delay(1500);
+                            if (Settings.ECR_WAIT_TO_RECHARGE)
+                            {
+                                waitToRechargeECR = true;
+                                Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_ALERT);
+                            }
+                            SleepUntil = DateTime.Now.AddMinutes(5);
+                            return SleepUntil;
                         }
-                        return SleepUntil;
+                        else
+                        {
+                            if (questCompleted)
+                            {
+                                Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(userBalance.ECR)}%/{Settings.ECR_LIMIT}%] ", Logs.LOG_ALERT);
+                                if (Settings.ECR_WAIT_TO_RECHARGE)
+                                {
+                                    waitToRechargeECR = true;
+                                    Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_ALERT);
+                                }
+                                SleepUntil = DateTime.Now.AddMinutes(5);
+                                return SleepUntil;
+                            }
+                        }
                     }
                 }
                 else
                 {
-                    if ((userDetails.capture_rate) < Settings.ECR_RECHARGE_LIMIT)
+                    if ((userBalance.ECR) < Settings.ECR_RECHARGE_LIMIT)
                     {
-                        Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {userDetails.capture_rate}%/{Settings.ECR_RECHARGE_LIMIT}%. Moving to next account", Logs.LOG_ALERT);
+                        Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {Math.Round(userBalance.ECR)}%/{Settings.ECR_RECHARGE_LIMIT}%. Moving to next account", Logs.LOG_ALERT);
                         SleepUntil = DateTime.Now.AddMinutes(10);
                         return SleepUntil;
                     }
                     else
                     {
-                        Logs.LogMessage($"{UserData.Username}: ECR Restored {userDetails.capture_rate}%/{Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_SUCCESS);
+                        Logs.LogMessage($"{UserData.Username}: ECR Restored {Math.Round(userBalance.ECR)}%/{Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_SUCCESS);
                         waitToRechargeECR = false;
                     }
                 }
@@ -288,8 +348,10 @@ namespace SplinterlandsRObot.Game
                     }
                 }
 
+                JToken team = new JObject();
                 bool surrender = false;
                 SleepUntil = DateTime.Now.AddMinutes(Settings.SLEEP_BETWEEN_BATTLES);
+
                 if (submitTeam)
                 {
                     if (matchDetails == null)
@@ -317,7 +379,6 @@ namespace SplinterlandsRObot.Game
                         }
                         Logs.LogMessage($"{UserData.Username}: New match found - Manacap: {matchDetails["mana_cap"]}; Ruleset: {matchDetails["ruleset"]}; Inactive splinters: {matchDetails["inactive"]}", Logs.LOG_ALERT);
                     }
-                    JToken team = new JObject();
                     
                     try
                     {
@@ -394,15 +455,26 @@ namespace SplinterlandsRObot.Game
                     else
                     {
                         if (!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached))
-                            Logs.LogMessage($"{UserData.Username}: Error revealing team.", Logs.LOG_WARNING);
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Error revealing team. Trying again", Logs.LOG_WARNING);
+                            if (!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, CardsCached))
+                                Logs.LogMessage($"{UserData.Username}: Error revealing team on second attempt", Logs.LOG_WARNING);
+                        }
+                            
                     }
                 }
+                else
+                {
+                    if (!HiveActions.SurrenderBattle(tx, UserData))
+                        Logs.LogMessage($"{UserData.Username}: Error surrendering match.", Logs.LOG_WARNING);
+                }
+
                 Logs.LogMessage($"{UserData.Username}: Battle finished!");
 
                 if (Settings.SHOW_BATTLE_RESULTS)
                 {
                     await ShowBattleResult(tx, surrender);
-                    InstanceManager.UsersStatistics[botInstance].ECR = Math.Round(userDetails.capture_rate != null ? (double)userDetails.capture_rate : 0, 2);
+                    InstanceManager.UsersStatistics[botInstance].Balance.ECR = Math.Round(userBalance.ECR != null ? (double)userBalance.ECR : 0, 2);
                 }
             }
             catch (Exception ex)
@@ -443,7 +515,7 @@ namespace SplinterlandsRObot.Game
 
                 if (await webSocketClient.WaitForStateChange(GameState.ecr_update))
                 {
-                    userDetails.capture_rate = ((double)webSocketClient.states[GameState.ecr_update]["capture_rate"]) / 100;
+                    userBalance.ECR = ((double)webSocketClient.states[GameState.ecr_update]["capture_rate"]) / 100;
                 }
                 if (await webSocketClient.WaitForStateChange(GameState.quest_progress))
                 {
@@ -618,7 +690,7 @@ namespace SplinterlandsRObot.Game
             try
             {
                 int highestPossibleLeague = GetMaxLeagueByRankAndPower(userDetails.rating, userDetails.collection_power);
-                if (highestPossibleLeague > userDetails.league && userDetails.rating > 1000)
+                if (highestPossibleLeague > userDetails.league && highestPossibleLeague <= (UserData.MaxLeague == 0 ? 13 : UserData.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
                     APICounter = 100; // set api counter to 100 to reload details
