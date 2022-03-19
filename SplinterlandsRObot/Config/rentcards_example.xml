@@ -2,50 +2,37 @@
 <cards>
 	<card>
 		<card_detail_id>408</card_detail_id>
-		<card_edition>Chaos Legion</card_edition>
+		<card_edition>7</card_edition>
 		<is_gold>false</is_gold>
-		<price_limit>1.29</price_limit>
-		<rent_days>1</rent_days>
-		<currency>DEC</currency>
+		<xp>1</xp>
+		<price_limit>2</price_limit>
 	</card>
 	<card>
 		<card_detail_id>394</card_detail_id>
-		<card_edition>Chaos Legion</card_edition>
+		<card_edition>7</card_edition>
 		<is_gold>false</is_gold>
-		<price_limit>1.35</price_limit>
-		<rent_days>1</rent_days>
-		<currency>DEC</currency>
+		<xp>1</xp>
+		<price_limit>2</price_limit>
 	</card>
 	<card>
 		<card_detail_id>380</card_detail_id>
-		<card_edition>Chaos Legion</card_edition>
+		<card_edition>7</card_edition>
 		<is_gold>false</is_gold>
-		<price_limit>1.31</price_limit>
-		<rent_days>1</rent_days>
-		<currency>DEC</currency>
+		<xp>1</xp>
+		<price_limit>2</price_limit>
 	</card>
 	<card>
 		<card_detail_id>422</card_detail_id>
-		<card_edition>Chaos Legion</card_edition>
+		<card_edition>7</card_edition>
 		<is_gold>false</is_gold>
-		<price_limit>1.25</price_limit>
-		<rent_days>1</rent_days>
-		<currency>DEC</currency>
+		<xp>1</xp>
+		<price_limit>2</price_limit>
 	</card>
-	<card>
+	<!--<card>
 		<card_detail_id>366</card_detail_id>
-		<card_edition>Chaos Legion</card_edition>
+		<card_edition>7</card_edition>
 		<is_gold>false</is_gold>
-		<price_limit>1.22</price_limit>
-		<rent_days>1</rent_days>
-		<currency>DEC</currency>
-	</card>
-	<card>
-		<card_detail_id>91</card_detail_id>
-		<card_edition>Reward</card_edition>
-		<is_gold>false</is_gold>
-		<price_limit>0.16</price_limit>
-		<rent_days>1</rent_days>
-		<currency>DEC</currency>
-	</card>
+		<xp>1</xp>
+		<price_limit>2</price_limit>
+	</card>-->
 </cards>

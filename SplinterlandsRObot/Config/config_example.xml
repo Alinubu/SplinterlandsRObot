@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
+  <DoBattle>true</DoBattle>
   <MaxThreads>1</MaxThreads><!--The number of accounts the bot will play in parallel-->
   <HoldCacheFor>50</HoldCacheFor><!--Time in minutes the bot will cache data from splinterlands-->
   <DebugMode>false</DebugMode><!--Just enable this if you have issues, will diplay a lot more logs in the console-->
-  <ApiUrl>http://18.184.197.121:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
+  <ApiUrl>http://api.splinterlandsrobot.com:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
   <SleepBetweenBattles>5</SleepBetweenBattles><!--After each battle account will be benched for X minutes-->
   <ShowBattleResults>true</ShowBattleResults><!--Displays battle results and overview of accounts-->
   <ECR>
@@ -16,7 +17,10 @@
   </League>
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
+	<IgnoreECRLimit>false</IgnoreECRLimit><!--Bot will continue to play until quest is finished even if ECR limit is reached-->
+	<SleepAfterQuestCompleted>false</SleepAfterQuestCompleted><!--Account will sleep after quest completed until new quest available-->
 	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
+	<ShowQuestRewards>true</ShowQuestRewards><!--After claiming the quest it will display a table with the rewards in the console-->
 	<DontClaimNearNextLeague>false</DontClaimNearNextLeague><!--When enabled, if rating is near a higher league and user has the power for it, it will wait to reach that league before claiming reward-->
 	<AvoidQuests>
 	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
@@ -29,11 +33,17 @@
 	<Airdrops>
 	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
 	</Airdrops>
-	<RentalBot><!--Not available yet-->
-	  <UseRentalBot>false</UseRentalBot>
-	  <RentGoldOnly>true</RentGoldOnly>
-	  <MaxPricePer500DEC>1.5</MaxPricePer500DEC>
-	  <DaysToRent>1</DaysToRent>
+	<RentalBot>
+	  <UseRentalBot>false</UseRentalBot><!--Enables the renting features, all settings below will be ignored if this is disabled-->
+	  <BattleWhileRenting>false</BattleWhileRenting><!--Accounts will continue to battle even if CP is below PowerLimit-->
+	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
+	  <RentSpecificCards>false</RentSpecificCards><!--Will prioritize renting the cards setup in the rentConfig set for each user-->
+	  <RentForPower>false</RentForPower><!--Will rent any card that matches de configured parameters-->
+	  <RentGoldOnly>false</RentGoldOnly><!--When renting for Power, if enabled, bot will only check the gold cards-->
+	  <CPperDecLimit>250</CPperDecLimit><!--Set the minimum CP/DEC for renting-->
+	  <MinimumPowerToRent>100</MinimumPowerToRent><!--Used together with RentForPower, will ignore any card with CP lower than this setting-->
+	  <RenewRentals>true</RenewRentals><!--Rentals are check and renewed if end date is in less than X hours (see next option)-->
+	  <RenewHoursBeforeEnding>2</RenewHoursBeforeEnding><!--Number of hour before a rental will end-->
 	</RentalBot>
 	<TransferBot>
 	  <MainAccount>YourMainUser</MainAccount><!--The main account you want the assets to be transfered to-->
@@ -42,7 +52,9 @@
 	  <KeepDecAmount>15</KeepDecAmount><!--The amount of DEC you want to keed for one account-->
 	  <MininumDecToTransfer>10</MininumDecToTransfer><!--Bot will not trigger a transaction if the remaining amount is less than what is set-->
 	  <TransferSps>false</TransferSps><!--Will transfer SPS currency to main account-->
+	  <TransferPacks>false</TransferPacks><!--Will transfer Packs to main account-->
 	</TransferBot>
 	<UsePrivateAPi>false</UsePrivateAPi><!--No Limit for API Calls-->
+	<SyncBotStats>false</SyncBotStats><!--Sync the user statistics with the server, you can check them on the bot website using the generated passkey-->
   </ProFeatures>
 </config>

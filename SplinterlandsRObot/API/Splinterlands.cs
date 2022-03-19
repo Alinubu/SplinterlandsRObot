@@ -52,6 +52,7 @@ namespace SplinterlandsRObot.API
             {
                 result = await response.Content.ReadAsStringAsync();
             }
+            Thread.Sleep(500);
             return JsonConvert.DeserializeObject<UserDetails>(result);
         }
         public async Task<string> GetUserAccesToken(string username, string bid, string sid, string signature, string ts)
@@ -104,6 +105,8 @@ namespace SplinterlandsRObot.API
             {
                 result = await response.Content.ReadAsStringAsync();
             }
+            Thread.Sleep(500);
+
             return JsonConvert.DeserializeObject<CardsCollection>(result);
         }
         public async Task<string> GetOutstandingMatch(string username)
@@ -140,9 +143,12 @@ namespace SplinterlandsRObot.API
             }
             return result;
         }
-        public async Task<double> GetPlayerECRAsync(string username)
+        public async Task<UserBalance> GetPlayerBalancesAsync(string username)
         {
             string result = "";
+            JToken defaultValue = new JObject(
+                new JProperty("balance", 0));
+            UserBalance balance = new();
             HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_PlAYER_BALANCE + username);
             if (response.IsSuccessStatusCode)
             {
@@ -150,13 +156,47 @@ namespace SplinterlandsRObot.API
             }
             JArray balances = (JArray)JToken.Parse(result);
 
-            var balanceInfo = balances.Where(x => (string)x["token"] == "ECR").First();
-            if (balanceInfo["balance"].Type == JTokenType.Null) return 100;
-            var captureRate = (int)balanceInfo["balance"];
-            DateTime lastRewardTime = (DateTime)balanceInfo["last_reward_time"];
-            double ecrRegen = 0.0868;
-            double ecr = captureRate + (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset(lastRewardTime).ToUnixTimeMilliseconds()) / 3000 * ecrRegen;
-            return Math.Min(ecr, 10000) / 100;
+            var ECRBalance = balances.Where(x => (string)x["token"] == "ECR").FirstOrDefault(defaultValue);
+            if ((int)ECRBalance["balance"] == 0)
+            { balance.ECR = 100; }
+            else
+            {
+                var captureRate = (int)ECRBalance["balance"];
+                DateTime lastRewardTime = (DateTime)ECRBalance["last_reward_time"];
+                double ecrRegen = 0.0868;
+                double ecr = captureRate + (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset(lastRewardTime).ToUnixTimeMilliseconds()) / 3000 * ecrRegen;
+                balance.ECR = Math.Min(ecr, 10000) / 100;
+            }
+
+            var gPotionBalance = balances.Where(x => (string)x["token"] == "GOLD").FirstOrDefault(defaultValue);
+            balance.GoldPotions = (int)gPotionBalance["balance"];
+
+            var lPotionBalance = balances.Where(x => (string)x["token"] == "LEGENDARY").FirstOrDefault(defaultValue);
+            balance.LegendaryPotions = (int)lPotionBalance["balance"];
+
+            var qPotionBalance = balances.Where(x => (string)x["token"] == "QUEST").FirstOrDefault(defaultValue);
+            balance.QuestPotions = (int)qPotionBalance["balance"];
+
+            var packsBalance = balances.Where(x => (string)x["token"] == "CHAOS").FirstOrDefault(defaultValue);
+            balance.Packs = (int)packsBalance["balance"];
+
+            var voucherBalance = balances.Where(x => (string)x["token"] == "VOUCHER").FirstOrDefault(defaultValue);
+            balance.Voucher = (double)voucherBalance["balance"];
+
+            var decBalance = balances.Where(x => (string)x["token"] == "DEC").FirstOrDefault(defaultValue);
+            balance.DEC = (double)decBalance["balance"];
+
+            var creditsBalance = balances.Where(x => (string)x["token"] == "CREDITS").FirstOrDefault(defaultValue);
+            balance.Credits = (double)creditsBalance["balance"];
+
+            var stakedSPSBalance = balances.Where(x => (string)x["token"] == "SPSP").FirstOrDefault(defaultValue);
+            balance.SPSP = (double)stakedSPSBalance["balance"];
+
+            var SPSBalance = balances.Where(x => (string)x["token"] == "SPS").FirstOrDefault(defaultValue);
+            balance.SPS = (double)SPSBalance["balance"];
+            Thread.Sleep(500);
+
+            return balance;
         }
         #region Windows7 Legacy Mode
         public async Task<JToken> GetMatchDetails(string tx)

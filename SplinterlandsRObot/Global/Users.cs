@@ -10,13 +10,12 @@ namespace SplinterlandsRObot
 {
     public class Users
     {
-        public static List<User> userList = new List<User>();
-
-        public Users()
+        public List<User> GetUsers()
         {
             Logs.LogMessage("Loading users data, this may take a while...");
             XmlDocument doc = new XmlDocument();
             doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "users.xml"));
+            List<User> userList = new();
 
             foreach (XmlNode node in doc.DocumentElement.SelectNodes("user"))
             {
@@ -31,9 +30,14 @@ namespace SplinterlandsRObot
                             AccessToken = Task.Run(() => GetAccessToken(node.SelectSingleNode("username").InnerText, node.SelectSingleNode("postingKEY").InnerText)).Result
                         },
                         PowerLimit = node.SelectSingleNode("powerLimit").InnerText != "" ? Convert.ToInt32(node.SelectSingleNode("powerLimit").InnerText) : 0,
-                        RentDetails = new()
+                        ECROverride = Convert.ToDouble(node.SelectSingleNode("ECROverride").InnerText),
+                        MaxLeague = Convert.ToInt32(node.SelectSingleNode("MaxLeague").InnerText),
+                        RentFile = node.SelectSingleNode("RentFile").InnerText
                     });
+                Thread.Sleep(625);
             }
+
+            return userList;
         }
         private async Task<string> GetAccessToken(string username, string postingkey)
         {
