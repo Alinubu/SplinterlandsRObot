@@ -17,9 +17,11 @@ Splinterlands RO Bot is a fast Battle-API interaction based bot, rebuilt from [U
 	- Replacement of starter cards with similar higher level cards from the user collection if rulesets allow it
 * Pro features:
 	- Bot can collect Hive SPS Airdrops
-	- Transfer Bot for transfering assets to one main account (Cards, Dec, SPS)
+	- Transfer Bot for transfering assets to one main account (Cards, Dec, SPS, Packs)
 	- Quest rewards export to Excel for the past 30 days
 	- DEC rewards export to Excel
+	- Card renting
+	- Online stats dashboard
 
 ## Console Commands
 * START-TRANSFER-BOT (Starts the transfer process from all the accounts to the main accout)
@@ -55,7 +57,7 @@ Settings that can be changed withoud restarting the application (**Changes will 
 - Run the SplinterlandsRObot file
 
 ## Config settings
-![config](https://github.com/Alinubu/SplinterlandsRObot/raw/main/config_example.jpg)
+View the detailed configuration list [here](http://splinterlandsrobot.com/#!/BotConfigs)
 
 ## Support & Community
 [Discord](https://discord.gg/PrqxhN6d9j)
