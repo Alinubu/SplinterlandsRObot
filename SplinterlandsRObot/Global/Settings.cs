@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using SplinterlandsRObot.Global;
+using System.Reflection;
 using System.Xml;
 
 namespace SplinterlandsRObot
@@ -26,6 +27,7 @@ namespace SplinterlandsRObot
         public static string[]? AVOID_SPECIFIC_QUESTS_LIST { get; private set; }
         public static string PREFERRED_SUMMONERS { get; private set; }
         public static bool REPLACE_STARTER_CARDS { get; set; }
+        public static bool USE_STARTER_CARDS { get; private set; }
         public static bool COLLECT_SPS { get; set; }
         public static bool USE_RENTAL_BOT { get; set; }
         public static bool BATTLE_WHILE_RENTING { get; private set; }
@@ -52,48 +54,49 @@ namespace SplinterlandsRObot
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "config.xml"));
-
-            DO_BATTLE = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("DoBattle").InnerText);
-            MAX_THREADS = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("MaxThreads").InnerText);
-            HOLD_CACHE_FOR = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("HoldCacheFor").InnerText);
-            DEBUG_MODE = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("DebugMode").InnerText);
-            API_URL = doc.DocumentElement.SelectSingleNode("ApiUrl").InnerText;
-            SLEEP_BETWEEN_BATTLES = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("SleepBetweenBattles").InnerText);
-            SHOW_BATTLE_RESULTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ShowBattleResults").InnerText);
-            ECR_LIMIT = Convert.ToDouble(doc.DocumentElement.SelectSingleNode("ECR/Limit").InnerText);
-            ECR_WAIT_TO_RECHARGE = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ECR/WaitToRecharge").InnerText);
-            ECR_RECHARGE_LIMIT = Convert.ToDouble(doc.DocumentElement.SelectSingleNode("ECR/RechargeLimit").InnerText);
-            LEAGUE_ADVANCE_TO_NEXT = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("League/AdvanceToNext").InnerText);
-            DO_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/DoQuests").InnerText);
-            IGNORE_ECR_LIMIT_FOR_QUEST = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/IgnoreECRLimit").InnerText);
-            SLEEP_AFTER_QUEST_COMPLETED = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/SleepAfterQuestCompleted").InnerText);
-            CLAIM_QUEST_REWARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/ClaimRewards").InnerText);
-            SHOW_QUEST_REWARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/ShowQuestRewards").InnerText);
-            DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/DontClaimNearNextLeague").InnerText);
-            AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/Enabled").InnerText);
-            AVOID_SPECIFIC_QUESTS_LIST = doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText != null ? doc.DocumentElement.SelectSingleNode("Quests/AvoidQuests/QuestList").InnerText.Split(';') : new string[0];
-            PREFERRED_SUMMONERS = doc.DocumentElement.SelectSingleNode("PreferredSummoners").InnerText;
-            REPLACE_STARTER_CARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ReplaceStarterCards").InnerText);
-            COLLECT_SPS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/Airdrops/CollectSPS").InnerText);
-            USE_RENTAL_BOT = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/UseRentalBot").InnerText);
-            BATTLE_WHILE_RENTING = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/BattleWhileRenting").InnerText);
-            RENT_GOLD_ONLY = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RentGoldOnly").InnerText);
-            CP_PER_DEC_LIMIT = Convert.ToDouble(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/CPperDecLimit").InnerText);
-            DAYS_TO_RENT = doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/DaysToRent").InnerText;
-            RENT_SPECIFIC_CARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RentSpecificCards").InnerText);
-            RENT_FOR_POWER = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RentForPower").InnerText);
-            MINIMUM_POWER_TO_RENT = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/MinimumPowerToRent").InnerText);
-            RENEW_RENTALS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RenewRentals").InnerText);
-            RENEW_HOURS_BEFORE_ENDING = Convert.ToInt32(doc.DocumentElement.SelectSingleNode("ProFeatures/RentalBot/RenewHoursBeforeEnding").InnerText);
-            TRANSFER_BOT_MAIN_ACCOUNT = doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/MainAccount").InnerText;
-            TRANSFER_BOT_SEND_CARDS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/TransferCards").InnerText);
-            TRANSFER_BOT_SEND_DEC = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/TransferDec").InnerText);
-            TRANSFER_BOT_KEEP_DEC_AMOUNT = Convert.ToDouble(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/KeepDecAmount").InnerText);
-            TRANSFER_BOT_MINIMUM_DEC_TO_TRANSFER = Convert.ToDouble(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/MininumDecToTransfer").InnerText);
-            TRANSFER_BOT_SEND_SPS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/TransferSps").InnerText);
-            TRANSFER_BOT_SEND_PACKS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/TransferBot/TransferPacks").InnerText);
-            USE_PRIVATE_API = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/UsePrivateAPi").InnerText);
-            SYNC_BOT_STATS = Convert.ToBoolean(doc.DocumentElement.SelectSingleNode("ProFeatures/SyncBotStats").InnerText);
+            XmlNode rootNode = doc.SelectSingleNode("config");
+            DO_BATTLE = Convert.ToBoolean(Helpers.ReadNode(doc.SelectSingleNode("config"), "DoBattle", false, "true"));
+            MAX_THREADS = Convert.ToInt32(Helpers.ReadNode(rootNode, "MaxThreads", false, "1"));
+            HOLD_CACHE_FOR = Convert.ToInt32(Helpers.ReadNode(rootNode, "HoldCacheFor", false, "30"));
+            DEBUG_MODE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "DebugMode", false, "false"));
+            API_URL = Helpers.ReadNode(rootNode, "ApiUrl", false, "http://api.splinterlandsrobot.com:5000");
+            SLEEP_BETWEEN_BATTLES = Convert.ToInt32(Helpers.ReadNode(rootNode, "SleepBetweenBattles", false, "5"));
+            SHOW_BATTLE_RESULTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ShowBattleResults", false, "true"));
+            ECR_LIMIT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ECR/Limit", false, "75"));
+            ECR_WAIT_TO_RECHARGE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ECR/WaitToRecharge", false, "false"));
+            ECR_RECHARGE_LIMIT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ECR/RechargeLimit", false, "99"));
+            LEAGUE_ADVANCE_TO_NEXT = Convert.ToBoolean(Helpers.ReadNode(rootNode, "League/AdvanceToNext", false, "true"));
+            DO_QUESTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/DoQuests", false, "true"));
+            IGNORE_ECR_LIMIT_FOR_QUEST = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/IgnoreECRLimit", false, "false"));
+            SLEEP_AFTER_QUEST_COMPLETED = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/SleepAfterQuestCompleted", false, "false"));
+            CLAIM_QUEST_REWARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ClaimRewards", false, "true"));
+            SHOW_QUEST_REWARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ShowQuestRewards", false, "true"));
+            DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/DontClaimNearNextLeague", false, "true"));
+            AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/AvoidQuests/Enabled", false, "false"));
+            AVOID_SPECIFIC_QUESTS_LIST = Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList", false, "none") != "none" ? Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList").Split(';') : new string[0];
+            PREFERRED_SUMMONERS = Helpers.ReadNode(rootNode, "Cards/PreferredSummoners", false, "");
+            REPLACE_STARTER_CARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Cards/ReplaceStarterCards", false, "true"));
+            USE_STARTER_CARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Cards/UseStarterCards", false, "true"));
+            COLLECT_SPS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/Airdrops/CollectSPS", false, "false"));
+            USE_RENTAL_BOT = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/UseRentalBot", false, "false"));
+            BATTLE_WHILE_RENTING = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/BattleWhileRenting", false, "false"));
+            RENT_SPECIFIC_CARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentSpecificCards", false, "false"));
+            RENT_FOR_POWER = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForPower", false, "false"));
+            RENT_GOLD_ONLY = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentGoldOnly", false, "false"));
+            CP_PER_DEC_LIMIT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/CPperDecLimit", false, "250"));
+            DAYS_TO_RENT = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DaysToRent", false, "1");
+            MINIMUM_POWER_TO_RENT = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/MinimumPowerToRent", false, "100"));
+            RENEW_RENTALS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RenewRentals", false, "false"));
+            RENEW_HOURS_BEFORE_ENDING = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RenewHoursBeforeEnding", false, "2"));
+            TRANSFER_BOT_MAIN_ACCOUNT = Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/MainAccount", false, "YourMainUser");
+            TRANSFER_BOT_SEND_CARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferCards", false, "false"));
+            TRANSFER_BOT_SEND_DEC = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferDec", false, "false"));
+            TRANSFER_BOT_KEEP_DEC_AMOUNT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/KeepDecAmount", false, "15"));
+            TRANSFER_BOT_MINIMUM_DEC_TO_TRANSFER = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/MininumDecToTransfer", false, "10"));
+            TRANSFER_BOT_SEND_SPS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferSps", false, "false"));
+            TRANSFER_BOT_SEND_PACKS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferPacks", false, "false"));
+            USE_PRIVATE_API = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/UsePrivateAPi", false, "false"));
+            SYNC_BOT_STATS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/SyncBotStats", false, "false"));
         }
         public static void ChangeConfig(string settingName, string settingValue)
         {

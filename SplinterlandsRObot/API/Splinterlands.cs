@@ -10,7 +10,7 @@ namespace SplinterlandsRObot.API
         const string API_URL = "https://api2.splinterlands.com";
         const string SP_USER_DATA = "/players/details?name=";
         const string SP_QUEST_DATA = "/players/quests?username=";
-        const string SP_CARDS_COLLECTION = "/cards/collection/";
+        const string SP_CARDS_COLLECTION = "/cards/collection/@@_username_@@?v=@@_timestamp_@@&token=@@_accessToken_@@&username=@@_username_@@";
         const string SP_OUTSTANGING_MATCH = "/players/outstanding_match?username=";
         const string SP_AIRDROP_DATA = "/players/sps?v=1638714545572&token=@@_accessToken_@@&username=@@_username_@@";
         const string SP_PlAYER_BALANCE = "/players/balances?username=";
@@ -52,7 +52,7 @@ namespace SplinterlandsRObot.API
             {
                 result = await response.Content.ReadAsStringAsync();
             }
-            Thread.Sleep(500);
+            await Task.Delay(500);
             return JsonConvert.DeserializeObject<UserDetails>(result);
         }
         public async Task<string> GetUserAccesToken(string username, string bid, string sid, string signature, string ts)
@@ -97,15 +97,16 @@ namespace SplinterlandsRObot.API
 
             return data;
         }
-        public async Task<CardsCollection> GetUserCardsCollection(string username)
+        public async Task<CardsCollection> GetUserCardsCollection(string username, string accessToken)
         {
             string result = "";
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_CARDS_COLLECTION + username);
+            string ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
+            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_CARDS_COLLECTION.Replace("@@_username_@@", username).Replace("@@_timestamp_@@", ts).Replace("@@_accessToken_@@", accessToken));
             if (response.IsSuccessStatusCode)
             {
                 result = await response.Content.ReadAsStringAsync();
             }
-            Thread.Sleep(500);
+            await Task.Delay(500);
 
             return JsonConvert.DeserializeObject<CardsCollection>(result);
         }
@@ -194,7 +195,7 @@ namespace SplinterlandsRObot.API
 
             var SPSBalance = balances.Where(x => (string)x["token"] == "SPS").FirstOrDefault(defaultValue);
             balance.SPS = (double)SPSBalance["balance"];
-            Thread.Sleep(500);
+            await Task.Delay(500);
 
             return balance;
         }

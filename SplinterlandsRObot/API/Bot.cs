@@ -34,7 +34,8 @@ namespace SplinterlandsRObot.API
                 preferredSummoners = Settings.PREFERRED_SUMMONERS,
                 username = user,
                 league = league,
-                replaceStarterCards = Settings.REPLACE_STARTER_CARDS
+                replaceStarterCards = Settings.REPLACE_STARTER_CARDS,
+                useStarterCards = Settings.USE_STARTER_CARDS
             };
 
             Uri url = new Uri(String.Format(Settings.API_URL + (usePrivateApi ? BOT_PRIVATE_API_GET_TEAM : BOT_PUBLIC_API_GET_TEAM)));
@@ -95,7 +96,7 @@ namespace SplinterlandsRObot.API
         {
             while (!token.IsCancellationRequested)
             {
-                Thread.Sleep(300000);
+                await Task.Delay(300000, token);
                 APISyncStatsPostData data = new APISyncStatsPostData()
                 {
                     PassKey = passKey,

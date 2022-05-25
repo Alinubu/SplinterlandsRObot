@@ -1,6 +1,7 @@
 ﻿using SplinterlandsRObot;
 using SplinterlandsRObot.API;
 using SplinterlandsRObot.Extensions;
+using SplinterlandsRObot.Global;
 using SplinterlandsRObot.Hive;
 using System.Runtime.InteropServices;
 
@@ -99,6 +100,7 @@ class Program
         int nextBotInstance = -1;
         bool firstRuntrough = true;
         DateTime[] sleepInfo = new DateTime[InstanceManager.BotInstances.Count];
+        Random rnd = new();
         Logs.LogMessage("Starting Bot");
         
         while (!token.IsCancellationRequested)
@@ -127,7 +129,6 @@ class Program
                     {
                         if (firstRuntrough)
                         {
-                            Random rnd = new();
                             Thread.Sleep(rnd.Next(1000, 5000));
                         }
 
@@ -175,7 +176,7 @@ class Program
         if (id != "")
             return id;
 
-        id = new HiveActions().GenerateMD5Hash( 
+        id = Helpers.GenerateMD5Hash( 
             Environment.CurrentDirectory +
             Environment.MachineName +
             Environment.OSVersion +
@@ -184,7 +185,7 @@ class Program
             Environment.ProcessorCount + 
             Environment.SystemPageSize + 
             DateTime.Now.ToBinary() +
-            new HiveActions().RandomString(20));
+            Helpers.RandomString(20));
 
         File.AppendAllText(fileName, id);
 

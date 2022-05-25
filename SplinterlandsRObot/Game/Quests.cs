@@ -46,7 +46,7 @@ namespace SplinterlandsRObot.Game
 
                 if (Settings.SHOW_QUEST_REWARDS)
                 {
-                    Thread.Sleep(15000);
+                    await Task.Delay(15000);
                     string txResponse = await new Splinterlands().GetTransactionDetails(tx);
                     string responseClean = txResponse.Replace("\"{", "{").Replace("}\"", "}").Replace(@"\", "");
 
@@ -91,11 +91,11 @@ namespace SplinterlandsRObot.Game
             }
             return false;
         }
-        public async Task<bool> RequestNewQuest(QuestData questData, User user, string questColor, bool questCompleted)
+        public bool RequestNewQuest(QuestData questData, User user, string questColor, bool questCompleted)
         {
             if (questData != null && Settings.AVOID_SPECIFIC_QUESTS_LIST.Contains(questColor) && !questCompleted)
             {
-                if (await new HiveActions().NewQuest(user))
+                if (new HiveActions().NewQuest(user))
                 {
                     return true;
                 }
@@ -111,7 +111,7 @@ namespace SplinterlandsRObot.Game
                     if (questData.claim_trx_id != null)
                     {
                         Logs.LogMessage($"{user.Username}: New Quest available, requesting from Splinterlands...");
-                        if (await new HiveActions().StartQuest(user))
+                        if (new HiveActions().StartQuest(user))
                         {
                             Logs.LogMessage($"{user.Username}: New Quest started", Logs.LOG_SUCCESS);
                             return true;
@@ -149,28 +149,10 @@ namespace SplinterlandsRObot.Game
 
         public string GetQuestColor(string questName)
         {
-            switch (questName)
-            {
-                case "Defend the Borders":
-                    return "Life";
-                case "Pirate Attacks":
-                    return "Water";
-                case "High Priority Targets":
-                    return "Snipe";
-                case "Lyanna's Call":
-                    return "Earth";
-                case "Stir the Volcano":
-                    return "Fire";
-                case "Rising Dead":
-                    return "Death";
-                case "Stubborn Mercenaries":
-                    return "Neutral";
-                case "Gloridax Revenge":
-                    return "Dragon";
-                case "Stealth Mission":
-                    return "Sneak";
-                default: return "";
-            }
+            string? splinter = SplinterlandsData.splinterlandsSettings.quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.splinter;
+            if (splinter != null)
+                return splinter;
+            else return "";
         }
     }
 }

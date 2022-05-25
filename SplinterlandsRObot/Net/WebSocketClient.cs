@@ -3,6 +3,7 @@ using SplinterlandsRObot.Constructors;
 using Websocket.Client;
 using Websocket.Client.Models;
 using SplinterlandsRObot.Hive;
+using SplinterlandsRObot.Global;
 
 namespace SplinterlandsRObot.Classes.Net
 {
@@ -33,7 +34,7 @@ namespace SplinterlandsRObot.Classes.Net
         }
         private void WebsocketAuthenticate()
         {
-            string sessionID = new HiveActions().RandomString(10);
+            string sessionID = Helpers.RandomString(10);
             string message = "{\"type\":\"auth\",\"player\":\"" + username + "\",\"access_token\":\"" + accessToken + "\",\"session_id\":\"" + sessionID + "\"}";
             WebsocketSendMessage(message);
         }
