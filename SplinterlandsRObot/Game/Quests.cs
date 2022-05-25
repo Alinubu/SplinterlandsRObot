@@ -149,7 +149,7 @@ namespace SplinterlandsRObot.Game
 
         public string GetQuestColor(string questName)
         {
-            string? splinter = SplinterlandsData.splinterlandsSettings.quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.splinter;
+            string? splinter = SplinterlandsData.splinterlandsSettings.quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.value;
             if (splinter != null)
                 return splinter;
             else return "";

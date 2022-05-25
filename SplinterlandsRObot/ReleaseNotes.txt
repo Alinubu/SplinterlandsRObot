@@ -1,13 +1,4 @@
-﻿Version 1.1.0
+﻿Version 1.1.0-QuestFix
 
 Changes:
-
-	- Updated configuration parsing for Bot and Users. Missing configs will now be set to a default value and an alert will be displayed in the console. Criticat config that are missing will throw an error.
-	- File config.xml has changed and has new options
-	- "UseStarterCards" option has beed added to bot config. This will allow users to switch on and off the usage of starter cards in teams. Warning: disabling this with now enough owned cards will result in empty teams.
-	- Updated User Collection api call to use the username and access token from Splinterlands (Related to some announcements they made)
-	- Updated the SplinterlandsSettings class to include the new details added for the quests (future DailyFocus)
-	- Small improvements
-Bug fixes:
-
-	- Fixed a bug that wouldn't change the ECR Limit if the console command for it was triggered in the console window
+	- Fix a bug introduced in the quest "color" identification.
