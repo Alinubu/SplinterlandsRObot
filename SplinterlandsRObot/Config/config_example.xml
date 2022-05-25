@@ -2,7 +2,7 @@
 <config>
   <DoBattle>true</DoBattle>
   <MaxThreads>1</MaxThreads><!--The number of accounts the bot will play in parallel-->
-  <HoldCacheFor>50</HoldCacheFor><!--Time in minutes the bot will cache data from splinterlands-->
+  <HoldCacheFor>30</HoldCacheFor><!--Time in minutes the bot will cache data from splinterlands-->
   <DebugMode>false</DebugMode><!--Just enable this if you have issues, will diplay a lot more logs in the console-->
   <ApiUrl>http://api.splinterlandsrobot.com:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
   <SleepBetweenBattles>5</SleepBetweenBattles><!--After each battle account will be benched for X minutes-->
@@ -21,14 +21,17 @@
 	<SleepAfterQuestCompleted>false</SleepAfterQuestCompleted><!--Account will sleep after quest completed until new quest available-->
 	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
 	<ShowQuestRewards>true</ShowQuestRewards><!--After claiming the quest it will display a table with the rewards in the console-->
-	<DontClaimNearNextLeague>false</DontClaimNearNextLeague><!--When enabled, if rating is near a higher league and user has the power for it, it will wait to reach that league before claiming reward-->
+	<DontClaimNearNextLeague>true</DontClaimNearNextLeague><!--When enabled, if rating is near a higher league and user has the power for it, it will wait to reach that league before claiming reward-->
 	<AvoidQuests>
 	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
 	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
 	</AvoidQuests>
   </Quests>
-  <PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
-  <ReplaceStarterCards>true</ReplaceStarterCards><!---->
+  <Cards>
+	<PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
+	<ReplaceStarterCards>true</ReplaceStarterCards><!--Will try to replace starter cards in the given team with similar owned cards-->
+	<UseStarterCards>true</UseStarterCards>
+  </Cards>
   <ProFeatures><!--This features are not available by default, dm me for details-->
 	<Airdrops>
 	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
@@ -36,11 +39,11 @@
 	<RentalBot>
 	  <UseRentalBot>false</UseRentalBot><!--Enables the renting features, all settings below will be ignored if this is disabled-->
 	  <BattleWhileRenting>false</BattleWhileRenting><!--Accounts will continue to battle even if CP is below PowerLimit-->
-	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
 	  <RentSpecificCards>false</RentSpecificCards><!--Will prioritize renting the cards setup in the rentConfig set for each user-->
 	  <RentForPower>false</RentForPower><!--Will rent any card that matches de configured parameters-->
 	  <RentGoldOnly>false</RentGoldOnly><!--When renting for Power, if enabled, bot will only check the gold cards-->
 	  <CPperDecLimit>250</CPperDecLimit><!--Set the minimum CP/DEC for renting-->
+	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
 	  <MinimumPowerToRent>100</MinimumPowerToRent><!--Used together with RentForPower, will ignore any card with CP lower than this setting-->
 	  <RenewRentals>true</RenewRentals><!--Rentals are check and renewed if end date is in less than X hours (see next option)-->
 	  <RenewHoursBeforeEnding>2</RenewHoursBeforeEnding><!--Number of hour before a rental will end-->

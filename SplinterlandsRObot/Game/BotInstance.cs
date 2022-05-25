@@ -5,6 +5,7 @@ using SplinterlandsRObot.Classes.Net;
 using SplinterlandsRObot.Hive;
 using SplinterlandsRObot.API;
 using SplinterlandsRObot.Extensions;
+using SplinterlandsRObot.Global;
 
 namespace SplinterlandsRObot.Game
 {
@@ -40,7 +41,6 @@ namespace SplinterlandsRObot.Game
             UserData = user;
             InstanceIndex = instanceIndex;
             SleepUntil = DateTime.Now.AddMinutes((Settings.SLEEP_BETWEEN_BATTLES + 1) * -1);
-            ECRLimit = UserData.ECROverride == 0 ? Settings.ECR_LIMIT : UserData.ECROverride;
             APICounter = 99;
             SP_API = new();
             BOT_API = new();
@@ -87,6 +87,7 @@ namespace SplinterlandsRObot.Game
                     return DateTime.Now.AddSeconds(30);
                 }
                 CurrentlyActive = true;
+                ECRLimit = UserData.ECROverride == 0 ? Settings.ECR_LIMIT : UserData.ECROverride;
             }
 
             try
@@ -119,7 +120,7 @@ namespace SplinterlandsRObot.Game
                         LastCacheUpdate = DateTime.Now;
                         userDetails = await SP_API.GetUserDetails(UserData.Username);
                         userBalance = await SP_API.GetPlayerBalancesAsync(UserData.Username);
-                        CardsCached = await SP_API.GetUserCardsCollection(UserData.Username);
+                        CardsCached = await SP_API.GetUserCardsCollection(UserData.Username, UserData.PassCodes.AccessToken);
                         if (Settings.COLLECT_SPS && !Settings.WINDOWS7)
                         {
                             await new CollectSPS().ClaimSPS(UserData);
@@ -204,7 +205,7 @@ namespace SplinterlandsRObot.Game
                         if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
                         {
                             Logs.LogMessage($"{UserData.Username}: Quest blacklisted, requesting a new one...", Logs.LOG_ALERT);
-                            if (await new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
+                            if (new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
                             {
                                 Logs.LogMessage($"{UserData.Username}: New Quest received", Logs.LOG_SUCCESS);
                                 questRenewed = true;
@@ -316,7 +317,7 @@ namespace SplinterlandsRObot.Game
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 string jsonResponsePlain = HiveActions.StartNewMatch(UserData);
-                string tx = HiveActions.DoQuickRegex("id\":\"(.*?)\"", jsonResponsePlain);
+                string tx = Helpers.DoQuickRegex("id\":\"(.*?)\"", jsonResponsePlain);
                 bool submitTeam = true;
                 JToken matchDetails = null;
 
@@ -325,8 +326,8 @@ namespace SplinterlandsRObot.Game
                     var outstandingGame = await SP_API.GetOutstandingMatch(UserData.Username);
                     if (outstandingGame != "null")
                     {
-                        tx = HiveActions.DoQuickRegex("\"id\":\"(.*?)\"", outstandingGame);
-                        var teamHash = HiveActions.DoQuickRegex("\"team_hash\":\"(.*?)\"", outstandingGame);
+                        tx = Helpers.DoQuickRegex("\"id\":\"(.*?)\"", outstandingGame);
+                        var teamHash = Helpers.DoQuickRegex("\"team_hash\":\"(.*?)\"", outstandingGame);
                         Logs.LogMessage($"{UserData.Username}: Found ongoing match: " + tx, Logs.LOG_WARNING);
                         if (teamHash.Length == 0)
                         {
@@ -418,7 +419,7 @@ namespace SplinterlandsRObot.Game
                     }
 
                     await Task.Delay(new Random().Next(3000, 8000));
-                    var submittedTeam = await HiveActions.SubmitTeam(tx, matchDetails, team, UserData, CardsCached);
+                    var submittedTeam = HiveActions.SubmitTeam(tx, matchDetails, team, UserData, CardsCached);
                     Logs.LogMessage($"{UserData.Username}: Team submitted. TX:{submittedTeam.tx}", supress: true);
                     if (!await WaitForTransactionSuccess(submittedTeam.tx, 15))
                     {

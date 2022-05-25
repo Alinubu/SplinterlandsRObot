@@ -12,5 +12,6 @@ namespace SplinterlandsRObot.Constructors
         public string username { get; set; }
         public int league { get; set; }
         public bool replaceStarterCards { get; set; }
+        public bool useStarterCards { get; set; }
     }
 }

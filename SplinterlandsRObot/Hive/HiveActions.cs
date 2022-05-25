@@ -4,11 +4,10 @@ using static HiveAPI.CS.CHived;
 using SplinterlandsRObot.Net;
 using SplinterlandsRObot.Constructors;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
-using System.Data;
 using Cryptography.ECDSA;
 using SplinterlandsRObot.API;
+using SplinterlandsRObot.Global;
 
 namespace SplinterlandsRObot.Hive
 {
@@ -18,7 +17,7 @@ namespace SplinterlandsRObot.Hive
         private object lk = new();
         public string StartNewMatch(User user)
         {
-            string n = RandomString(10);
+            string n = Helpers.RandomString(10);
             string json = "{\"match_type\":\"Ranked\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_find_match", json);
@@ -37,7 +36,7 @@ namespace SplinterlandsRObot.Hive
             return "";
         }
 
-        public async Task<(string secret, string tx)> SubmitTeam(string tx, JToken matchDetails, JToken team, User user, CardsCollection CardsCached)
+        public (string secret, string tx) SubmitTeam(string tx, JToken matchDetails, JToken team, User user, CardsCollection CardsCached)
         {
             try
             {
@@ -63,12 +62,12 @@ namespace SplinterlandsRObot.Hive
                 }
                 monsters = monsters[..^1];
 
-                string secret = RandomString(10);
-                string n = RandomString(10);
+                string secret = Helpers.RandomString(10);
+                string n = Helpers.RandomString(10);
 
                 string monsterClean = monsters.Replace("\"", "");
 
-                string teamHash = GenerateMD5Hash(summoner + "," + monsterClean + "," + secret);
+                string teamHash = Helpers.GenerateMD5Hash(summoner + "," + monsterClean + "," + secret);
 
                 string json = "{\"trx_id\":\"" + tx + "\",\"team_hash\":\"" + teamHash + "\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
@@ -81,7 +80,7 @@ namespace SplinterlandsRObot.Hive
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 Logs.LogMessage($"{user.Username}: Fetching battle data from Splinterlands", supress: true);
                 var response = HttpWebRequest.WebRequestPost(InstanceManager.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "https://splinterlands.com/", Encoding.UTF8);
-                string responseTx = DoQuickRegex("id\":\"(.*?)\"", response);
+                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
                 Logs.LogMessage($"{user.Username}: Result TX:{responseTx}", supress: true);
                 return (secret, responseTx);
             }
@@ -118,7 +117,7 @@ namespace SplinterlandsRObot.Hive
                 }
                 monsters = monsters[..^1];
 
-                string n = RandomString(10);
+                string n = Helpers.RandomString(10);
 
                 string monsterClean = monsters.Replace("\"", "");
 
@@ -133,7 +132,7 @@ namespace SplinterlandsRObot.Hive
                 Logs.LogMessage($"{user.Username}: Reveal TX:{JsonConvert.SerializeObject(oTransaction.tx)}", supress: true);
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(InstanceManager.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "https://splinterlands.com/", Encoding.UTF8);
-                string responseTx = DoQuickRegex("id\":\"(.*?)\"", response);
+                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
                 
                 if (responseTx == "")
                     return false;
@@ -150,14 +149,14 @@ namespace SplinterlandsRObot.Hive
         {
             try
             {
-                string n = RandomString(10);
+                string n = Helpers.RandomString(10);
                 string json = "{\"battle_queue_id\":\"" + battleId + "\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
                 Logs.LogMessage($"{user.Username}: Surrendering battle...");
                 COperations.custom_json custom_json = CreateCustomJson(user, false, true, "sm_surrender", json);
                 CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_json }, new string[] { user.PassCodes.PostingKey });
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(InstanceManager.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "https://splinterlands.com/", Encoding.UTF8);
-                string responseTx = DoQuickRegex("id\":\"(.*?)\"", response);
+                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
 
                 if (responseTx == "")
                     return false;
@@ -191,22 +190,22 @@ namespace SplinterlandsRObot.Hive
                 foreach (User user in InstanceManager.userList)
                 {
                     Logs.LogMessage($"[Season Rewards] {user.Username}: Checking for season rewards... ", supress: true);
-                    var bid = "bid_" + RandomString(20);
-                    var sid = "sid_" + RandomString(20);
+                    var bid = "bid_" + Helpers.RandomString(20);
+                    var sid = "sid_" + Helpers.RandomString(20);
                     var ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
                     var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(user.Username + ts));
                     var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(user.PassCodes.PostingKey));
                     var signature = Hex.ToString(sig);
                     var response = await sp_api.GetSeasonDetails(user.Username, bid, sid, signature, ts);
 
-                    var seasonReward = DoQuickRegex("\"season_reward\":(.*?)},\"", response);
+                    var seasonReward = Helpers.DoQuickRegex("\"season_reward\":(.*?)},\"", response);
                     if (seasonReward == "{\"reward_packs\":0")
                     {
                         Logs.LogMessage($"{user.Username}: No season reward available!", Logs.LOG_ALERT, true);
                     }
                     else
                     {
-                        var season = DoQuickRegex("\"season\":(.*?),\"", seasonReward);
+                        var season = Helpers.DoQuickRegex("\"season\":(.*?),\"", seasonReward);
                         if (season.Length <= 1)
                         {
                             Logs.LogMessage($"{user.Username}: Error at claiming season rewards: Could not read season!", Logs.LOG_WARNING);
@@ -214,7 +213,7 @@ namespace SplinterlandsRObot.Hive
                         else
                         {
                             Logs.LogMessage($"{user.Username}: Season rewards available.", Logs.LOG_ALERT);
-                            string n = RandomString(10);
+                            string n = Helpers.RandomString(10);
                             string json = "{\"type\":\"league_season\",\"season\":\"" + season + "\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
                             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_claim_reward", json);
@@ -262,40 +261,9 @@ namespace SplinterlandsRObot.Hive
             return postData;
         }
 
-        public string RandomString(int length)
-        {
-            const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            Random random = new Random();
-            return new string(Enumerable.Repeat(chars, length)
-              .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
-
-        public string DoQuickRegex(string Pattern, string Match)
-        {
-            Regex r = new Regex(Pattern, RegexOptions.Singleline);
-            return r.Match(Match).Groups[1].Value;
-        }
-        public string GenerateMD5Hash(string input)
-        {
-            // Use input string to calculate MD5 hash
-            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-
-                // Convert the byte array to hexadecimal string
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < hashBytes.Length; i++)
-                {
-                    sb.Append(hashBytes[i].ToString("x2"));
-                }
-                return sb.ToString();
-            }
-        }
-
         internal string AdvanceLeague(User user)
         {
-            string n = RandomString(10);
+            string n = Helpers.RandomString(10);
             string json = "{\"notify\":\"false\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_advance_league", json);
@@ -306,7 +274,7 @@ namespace SplinterlandsRObot.Hive
 
         internal string ClaimQuest(User user, string questId)
         {
-            string n = RandomString(10);
+            string n = Helpers.RandomString(10);
             string json = "{\"type\":\"quest\",\"quest_id\":\"" + questId + "\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_claim_reward", json);
@@ -315,11 +283,9 @@ namespace SplinterlandsRObot.Hive
             return tx;
         }
 
-        
-
-        internal async Task<bool> NewQuest(User user)
+        internal bool NewQuest(User user)
         {
-            string n = RandomString(10);
+            string n = Helpers.RandomString(10);
             string json = "{\"type\":\"daily\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_refresh_quest", json);
@@ -331,9 +297,9 @@ namespace SplinterlandsRObot.Hive
             return false;
         }
 
-        internal async Task<bool> StartQuest(User user)
+        internal bool StartQuest(User user)
         {
-            string n = RandomString(10);
+            string n = Helpers.RandomString(10);
             string json = "{\"type\":\"daily\",\"app\":\"" + Constants.SPLINTERLANDS_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_start_quest", json);
