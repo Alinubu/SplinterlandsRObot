@@ -18,11 +18,9 @@ namespace SplinterlandsRObot
         public static double ECR_RECHARGE_LIMIT { get; set; }
         public static bool LEAGUE_ADVANCE_TO_NEXT { get; set; }
         public static bool DO_QUESTS { get; set; }
-        public static bool IGNORE_ECR_LIMIT_FOR_QUEST { get; set; }
-        public static bool SLEEP_AFTER_QUEST_COMPLETED { get; set; }
+        public static double FOCUS_RATE { get; private set; }
         public static bool CLAIM_QUEST_REWARDS { get; set; }
         public static bool SHOW_QUEST_REWARDS { get; private set; }
-        public static bool DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE { get; set; }
         public static bool AVOID_SPECIFIC_QUESTS { get; private set; }
         public static string[]? AVOID_SPECIFIC_QUESTS_LIST { get; private set; }
         public static string PREFERRED_SUMMONERS { get; private set; }
@@ -67,11 +65,10 @@ namespace SplinterlandsRObot
             ECR_RECHARGE_LIMIT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ECR/RechargeLimit", false, "99"));
             LEAGUE_ADVANCE_TO_NEXT = Convert.ToBoolean(Helpers.ReadNode(rootNode, "League/AdvanceToNext", false, "true"));
             DO_QUESTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/DoQuests", false, "true"));
-            IGNORE_ECR_LIMIT_FOR_QUEST = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/IgnoreECRLimit", false, "false"));
-            SLEEP_AFTER_QUEST_COMPLETED = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/SleepAfterQuestCompleted", false, "false"));
+            FOCUS_RATE = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/FocusRate", false, "50"));
             CLAIM_QUEST_REWARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ClaimRewards", false, "true"));
             SHOW_QUEST_REWARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ShowQuestRewards", false, "true"));
-            DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/DontClaimNearNextLeague", false, "true"));
+            
             AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/AvoidQuests/Enabled", false, "false"));
             AVOID_SPECIFIC_QUESTS_LIST = Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList", false, "none") != "none" ? Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList").Split(';') : new string[0];
             PREFERRED_SUMMONERS = Helpers.ReadNode(rootNode, "Cards/PreferredSummoners", false, "");

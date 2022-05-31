@@ -35,6 +35,8 @@ namespace SplinterlandsRObot.Game
         private bool waitToRechargeECR = false;
         private DateTime SleepUntil;
         private object _activeLock = new();
+        private Random random = new Random();
+        private bool prioritizeFocus = false;
 
         public BotInstance(User user, int instanceIndex)
         {
@@ -177,7 +179,7 @@ namespace SplinterlandsRObot.Game
                 if (Settings.LEAGUE_ADVANCE_TO_NEXT) await AdvanceLeague();
 
                 if (Settings.DO_QUESTS)
-                    Logs.LogMessage($"{UserData.Username}: Quests enabled", Logs.LOG_SUCCESS, true);
+                    Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
 
                 questData = await SP_API.GetQuestData(UserData.Username);
 
@@ -189,101 +191,86 @@ namespace SplinterlandsRObot.Game
                     
                 if (questData != null)
                 {
-                    questColor = quests.GetQuestColor(questData.name);
-                    questProgress = quests.GetQuestProgress(questData.completed_items, questData.total_items);
-                    if (questProgress.Split(':').GetValue(0).ToString() == "Completed")
+                    questColor = quests.GetQuestColor(questData.name, UserData);
+                    if (questColor == "THISWILLBEREMOVEDATSOMEPOINT")
                     {
-                        questCompleted = true;
+                        questData = await SP_API.GetQuestData(UserData.Username);
+                        questColor = quests.GetQuestColor(questData.name, UserData);
                     }
-                    else
-                    {
-                        questCompleted = false;
-                    }
+
+                    questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
+                    questProgress = quests.GetQuestProgress(questData.earned_chests, (int)questData.chest_tier, questData.rshares);
+
+                    prioritizeFocus = random.NextDouble() >= (Settings.FOCUS_RATE/100) ? true : false;
 
                     if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
                     {
                         if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
                         {
-                            Logs.LogMessage($"{UserData.Username}: Quest blacklisted, requesting a new one...", Logs.LOG_ALERT);
+                            Logs.LogMessage($"{UserData.Username}: Daily Focus blacklisted, requesting a new one...", Logs.LOG_ALERT);
                             if (new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
                             {
-                                Logs.LogMessage($"{UserData.Username}: New Quest received", Logs.LOG_SUCCESS);
+                                Logs.LogMessage($"{UserData.Username}: New Daily Focus received", Logs.LOG_SUCCESS);
                                 questRenewed = true;
                                 questData = await SP_API.GetQuestData(UserData.Username);
-                                questColor = quests.GetQuestColor(questData.name);
+                                questColor = quests.GetQuestColor(questData.name, UserData);
+                                //Added this here just to be safe
+                                if (questColor == "THISWILLBEREMOVEDATSOMEPOINT")
+                                {
+                                    questData = await SP_API.GetQuestData(UserData.Username);
+                                    questColor = quests.GetQuestColor(questData.name, UserData);
+                                }
                                 APICounter = 99;
                             }
                             else
                             {
-                                Logs.LogMessage($"{UserData.Username}: Error requesting new Quest", Logs.LOG_WARNING);
+                                Logs.LogMessage($"{UserData.Username}: Error requesting new Daily Focus", Logs.LOG_WARNING);
                             }
                         }
                     }
 
                     if (Settings.DO_QUESTS)
-                        Logs.LogMessage($"{UserData.Username}: Current Quest[{questColor}]:{questData.name} - {questProgress}", Logs.LOG_ALERT, true);
+                        Logs.LogMessage($"{UserData.Username}: Current Focus: {questColor}", Logs.LOG_ALERT, true);
 
-                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questData.completed_items}/{questData.total_items}[{questColor}]";
-                    InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (23 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours).ToString();
+                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questColor}:{questProgress}";
+                    InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours).ToString();
                 }
                 else
                 {
-                    Logs.LogMessage($"{UserData.Username}: Having issues requesting Quest info", Logs.LOG_WARNING);
+                    Logs.LogMessage($"{UserData.Username}: Having issues requesting Daily Focus info", Logs.LOG_WARNING);
                     questCompleted = false;
                 }
 
-                if (questCompleted)
+                
+                if (Settings.CLAIM_QUEST_REWARDS)
                 {
-                    if (Settings.CLAIM_QUEST_REWARDS)
+                    if ((24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours) < 0 && questData.claim_trx_id == null)
                     {
-                        if (questData.claim_trx_id == null)
+                        Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_SUCCESS);
+                        if (await new Quests().ClaimQuestReward(questData, UserData, userDetails))
                         {
-                            Logs.LogMessage($"{UserData.Username}: Trying to claim Quest Rewards", Logs.LOG_SUCCESS);
-                            if (await new Quests().ClaimQuestReward(questData, UserData, userDetails)) APICounter = 99;
+                            questCompleted = true;
+                            APICounter = 99;
                         }
                     }
-
-                    if (Settings.SLEEP_AFTER_QUEST_COMPLETED && questCompleted)
-                    {
-                        Logs.LogMessage($"{UserData.Username}: Quest completed. Account will be skipped until new quest available", Logs.LOG_ALERT);
-                        SleepUntil = DateTime.Now.AddMinutes(15);
-                        return SleepUntil;
-                    }
                 }
-                
+
                 Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {userBalance.ECR}%", supress: true);
                 
                 if (!waitToRechargeECR)
                 {
                     if ((userBalance.ECR) < ECRLimit)
                     {
-                        if (!Settings.IGNORE_ECR_LIMIT_FOR_QUEST)
+                        Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(userBalance.ECR)}%/{Settings.ECR_LIMIT}%] ", Logs.LOG_ALERT);
+                        SleepUntil = DateTime.Now.AddMinutes(5);
+                        await Task.Delay(1500);
+                        if (Settings.ECR_WAIT_TO_RECHARGE)
                         {
-                            Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(userBalance.ECR)}%/{Settings.ECR_LIMIT}%] ", Logs.LOG_ALERT);
-                            SleepUntil = DateTime.Now.AddMinutes(5);
-                            await Task.Delay(1500);
-                            if (Settings.ECR_WAIT_TO_RECHARGE)
-                            {
-                                waitToRechargeECR = true;
-                                Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_ALERT);
-                            }
-                            SleepUntil = DateTime.Now.AddMinutes(5);
-                            return SleepUntil;
+                            waitToRechargeECR = true;
+                            Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_ALERT);
                         }
-                        else
-                        {
-                            if (questCompleted)
-                            {
-                                Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(userBalance.ECR)}%/{Settings.ECR_LIMIT}%] ", Logs.LOG_ALERT);
-                                if (Settings.ECR_WAIT_TO_RECHARGE)
-                                {
-                                    waitToRechargeECR = true;
-                                    Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {Settings.ECR_RECHARGE_LIMIT}%", Logs.LOG_ALERT);
-                                }
-                                SleepUntil = DateTime.Now.AddMinutes(5);
-                                return SleepUntil;
-                            }
-                        }
+                        SleepUntil = DateTime.Now.AddMinutes(5);
+                        return SleepUntil;
                     }
                 }
                 else
@@ -388,18 +375,18 @@ namespace SplinterlandsRObot.Game
                             Logs.LogMessage($"{UserData.Username}: Fetching team from private api");
                             try
                             {
-                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, true);
+                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, prioritizeFocus, true);
                             }
                             catch (Exception ex)
                             {
                                 Logs.LogMessage($"{UserData.Username}: Error fetching team from private api. Trying on public api", Logs.LOG_ALERT);
-                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, false);
+                                team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, prioritizeFocus, false);
                             }
                         }
                         else
                         {
                             Logs.LogMessage($"{UserData.Username}: Fetching team from public api");
-                            team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, false);
+                            team = await BOT_API.GetTeamFromAPI(matchDetails, questColor, questCompleted, CardsCached, UserData.Username, userDetails.league, prioritizeFocus, false);
                         }
                     }
                     catch (Exception ex)

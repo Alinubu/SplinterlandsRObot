@@ -23,7 +23,7 @@ namespace SplinterlandsRObot.API
             }
             return Convert.ToBoolean(result);
         }
-        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool usePrivateApi)
+        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool prioritizeFocus, bool usePrivateApi)
         {
 
             APIGetTeamPostData data = new APIGetTeamPostData()
@@ -35,7 +35,9 @@ namespace SplinterlandsRObot.API
                 username = user,
                 league = league,
                 replaceStarterCards = Settings.REPLACE_STARTER_CARDS,
-                useStarterCards = Settings.USE_STARTER_CARDS
+                useStarterCards = Settings.USE_STARTER_CARDS,
+                prioritizeFocus = prioritizeFocus
+
             };
 
             Uri url = new Uri(String.Format(Settings.API_URL + (usePrivateApi ? BOT_PRIVATE_API_GET_TEAM : BOT_PUBLIC_API_GET_TEAM)));

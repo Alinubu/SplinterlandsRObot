@@ -81,20 +81,22 @@ namespace SplinterlandsRObot.API
 
             dynamic json = JValue.Parse(result);
 
-            data.id = json[0]["id"];
-            data.player = json[0]["player"];
-            data.created_date = json[0]["created_date"];
-            data.created_block = json[0]["created_block"];
-            data.name = json[0]["name"];
-            data.total_items = json[0]["total_items"];
-            data.completed_items = json[0]["completed_items"];
-            data.claim_trx_id = json[0]["claim_trx_id"];
+            data.chest_tier = json[0]["chest_tier"];
             data.claim_date = json[0]["claim_date"];
-            data.reward_qty = json[0]["reward_qty"];
-            data.refresh_trx_id = json[0]["refresh_trx_id"];
-            data.rewards = null;
+            data.claim_trx_id = json[0]["claim_trx_id"];
+            data.completed_items = json[0]["completed_items"];
+            data.created_block = json[0]["created_block"];
+            data.created_date = json[0]["created_date"];
+            data.id = json[0]["id"];
             data.league = json[0]["league"];
-
+            data.name = json[0]["name"];
+            data.player = json[0]["player"];
+            data.refresh_trx_id = json[0]["refresh_trx_id"];
+            data.reward_qty = json[0]["reward_qty"];
+            data.rewards = null;
+            data.rshares = json[0]["rshares"];
+            data.total_items = json[0]["total_items"];
+            
             return data;
         }
         public async Task<CardsCollection> GetUserCardsCollection(string username, string accessToken)

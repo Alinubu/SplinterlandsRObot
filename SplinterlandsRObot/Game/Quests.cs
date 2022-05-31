@@ -7,42 +7,48 @@ namespace SplinterlandsRObot.Game
 {
     public class Quests
     {
-        public string GetQuestProgress(int totalCompletedItems, int totalQuestItems)
+        public string GetQuestProgress(int totalEarnedChests, int chest_tier, double rshares)
         {
-            string response;
+            
 
-            if (totalCompletedItems < totalQuestItems)
+            int baseRshares = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].@base;
+            int maxChests = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].max;
+            double multiplier = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].step_multiplier;
+
+            int neededRshares = totalEarnedChests == 0 ? baseRshares : totalEarnedChests == 1 ? Convert.ToInt32(baseRshares + (baseRshares * multiplier)) : Convert.ToInt32((totalEarnedChests - 1) * (baseRshares * multiplier) + baseRshares);
+
+            string response = $"C:{totalEarnedChests}/{maxChests}|FP:{rshares}/{neededRshares}";
+            return response;
+        }
+
+        internal int CalculateEarnedChests(int chest_tier, double rshares)
+        {
+            int baseRshares = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].@base;
+            double multiplier = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].step_multiplier;
+            int chests = 0;
+
+            if (rshares < baseRshares)
             {
-                response = "InProgress:" + totalCompletedItems.ToString() + "/" + totalQuestItems.ToString();
+                chests = 0;
             }
-            else if (totalCompletedItems == totalQuestItems)
+            else if (rshares > baseRshares && rshares < Convert.ToInt32(baseRshares + (baseRshares * multiplier)))
             {
-                response = "Completed:" + totalCompletedItems.ToString() + "/" + totalQuestItems.ToString();
+                chests = 1;
             }
             else
             {
-                response = "";
+                chests = Convert.ToInt32(((rshares - baseRshares) / (baseRshares * multiplier)) + 1);
             }
-            return response;
+
+            return chests;
         }
 
         public async Task<bool> ClaimQuestReward(QuestData questData, User user, UserDetails userDetails)
         {
             try
             {
-                if (Settings.DONT_CLAIM_QUEST_NEAR_NEXT_LEAGUE)
-                {
-                    int leagueRating = SplinterlandsData.splinterlandsSettings.leagues[userDetails.league + 1].min_rating;
-                    int leaguePower = SplinterlandsData.splinterlandsSettings.leagues[userDetails.league + 1].min_power;
-
-                    if(userDetails.rating >= (leagueRating - 100) && userDetails.collection_power >= leaguePower)
-                    {
-                        Logs.LogMessage($"{user.Username}: Account rating is near a higher league, quest will not be claimed!", Logs.LOG_ALERT);
-                        return false;
-                    }
-                }
                 string tx = new HiveActions().ClaimQuest(user, questData.id);
-                Logs.LogMessage($"{user.Username}: Claimed quest reward. Tx:{tx}");
+                Logs.LogMessage($"{user.Username}: Claimed Daily Focus reward. Tx:{tx}");
 
                 if (Settings.SHOW_QUEST_REWARDS)
                 {
@@ -87,7 +93,7 @@ namespace SplinterlandsRObot.Game
             }
             catch (Exception ex)
             {
-                Logs.LogMessage($"{user.Username}: Error at claiming quest rewards: {ex}", Logs.LOG_WARNING);
+                Logs.LogMessage($"{user.Username}: Error at claiming Daily Focus rewards: {ex}", Logs.LOG_WARNING);
             }
             return false;
         }
@@ -147,12 +153,21 @@ namespace SplinterlandsRObot.Game
             return response;
         }
 
-        public string GetQuestColor(string questName)
+        public string GetQuestColor(string questName, User user)
         {
-            string? splinter = SplinterlandsData.splinterlandsSettings.quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.value;
-            if (splinter != null)
-                return splinter;
-            else return "";
+            if (SplinterlandsData.splinterlandsSettings.daily_quests.Where(x => x.active == true && x.name == questName).Any())
+                return SplinterlandsData.splinterlandsSettings.daily_quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.value;
+            else
+            {
+                Logs.LogMessage($"{user.Username}: Cannot find Focus name. Maybe old quest active, requesting a new Focus", Logs.LOG_ALERT);
+                if (new HiveActions().StartQuest(user))
+                {
+                    Thread.Sleep(10000);
+                    return "THISWILLBEREMOVEDATSOMEPOINT";
+                }
+            }
+
+            return "";
         }
     }
 }

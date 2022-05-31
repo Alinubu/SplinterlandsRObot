@@ -1,4 +1,5 @@
-﻿Version 1.1.0-QuestFix
+﻿Version 1.1.1 is released
 
 Changes:
-	- Fix a bug introduced in the quest "color" identification.
+    - Adjusted bot with the new Daily Focus changes
+    - Added new option in config file. FocusRate: Percetange of the chance the bot will try play a Focused splinter each match (Range[0-100])

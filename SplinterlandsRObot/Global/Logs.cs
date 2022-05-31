@@ -8,7 +8,7 @@ namespace SplinterlandsRObot
         public static string LOG_SUCCESS = "SUCCESS";
         public static string LOG_ALERT = "ALERT";
         public static string LOG_WARNING = "WARNING";
-        public static string[] CONSOLE_TABLE_HEADER = new string[] { "Account", "ECR", "Wins", "Draws", "Losses", "Winrate", "Last DEC Reward", "Total DEC Rewards", "Rating", "CP", "Quest" };
+        public static string[] CONSOLE_TABLE_HEADER = new string[] { "Account", "ECR", "Wins", "Draws", "Losses", "Winrate", "Last DEC Reward", "Total DEC Rewards", "Rating", "CP", "Focus" };
         public static string[] CONSOLE_TABLE_TEAM = new string[] { "Summoner", "Monster1", "Monster2", "Monster3", "Monster4", "Monster5", "Monster6" };
         public static object _lock = new object();
 
