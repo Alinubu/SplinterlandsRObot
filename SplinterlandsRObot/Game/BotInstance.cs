@@ -183,9 +183,10 @@ namespace SplinterlandsRObot.Game
 
                 questData = await SP_API.GetQuestData(UserData.Username);
 
-                if (await new Quests().CheckForNewQuest(questData, UserData, questCompleted))
+                if (await quests.CheckForNewQuest(questData, UserData, questCompleted))
                 {
                     questRenewed = false;
+                    questCompleted = false;
                     questData = await SP_API.GetQuestData(UserData.Username);
                 }
                     
@@ -196,12 +197,13 @@ namespace SplinterlandsRObot.Game
                     {
                         questData = await SP_API.GetQuestData(UserData.Username);
                         questColor = quests.GetQuestColor(questData.name, UserData);
+                        questCompleted = false;
                     }
 
                     questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
                     questProgress = quests.GetQuestProgress(questData.earned_chests, (int)questData.chest_tier, questData.rshares);
 
-                    prioritizeFocus = random.NextDouble() >= (Settings.FOCUS_RATE/100) ? true : false;
+                    prioritizeFocus = random.NextDouble() >= (Settings.FOCUS_RATE/100) ? false : true;
 
                     if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
                     {
@@ -220,6 +222,7 @@ namespace SplinterlandsRObot.Game
                                     questData = await SP_API.GetQuestData(UserData.Username);
                                     questColor = quests.GetQuestColor(questData.name, UserData);
                                 }
+                                questCompleted = false;
                                 APICounter = 99;
                             }
                             else
@@ -232,7 +235,7 @@ namespace SplinterlandsRObot.Game
                     if (Settings.DO_QUESTS)
                         Logs.LogMessage($"{UserData.Username}: Current Focus: {questColor}", Logs.LOG_ALERT, true);
 
-                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questColor}:{questProgress}";
+                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questColor}[{questProgress}]";
                     InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours).ToString();
                 }
                 else

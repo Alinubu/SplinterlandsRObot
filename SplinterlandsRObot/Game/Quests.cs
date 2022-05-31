@@ -17,7 +17,7 @@ namespace SplinterlandsRObot.Game
 
             int neededRshares = totalEarnedChests == 0 ? baseRshares : totalEarnedChests == 1 ? Convert.ToInt32(baseRshares + (baseRshares * multiplier)) : Convert.ToInt32((totalEarnedChests - 1) * (baseRshares * multiplier) + baseRshares);
 
-            string response = $"C:{totalEarnedChests}/{maxChests}|FP:{rshares}/{neededRshares}";
+            string response = $"{totalEarnedChests}/{maxChests}|{rshares}/{neededRshares}";
             return response;
         }
 
@@ -112,24 +112,24 @@ namespace SplinterlandsRObot.Game
         {
             if (questData != null)
             {
-                if (questCompleted && (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 23)
+                if (questCompleted && (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24)
                 {
                     if (questData.claim_trx_id != null)
                     {
-                        Logs.LogMessage($"{user.Username}: New Quest available, requesting from Splinterlands...");
+                        Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
                         if (new HiveActions().StartQuest(user))
                         {
-                            Logs.LogMessage($"{user.Username}: New Quest started", Logs.LOG_SUCCESS);
+                            Logs.LogMessage($"{user.Username}: New Focus started", Logs.LOG_SUCCESS);
                             return true;
                         }
                         else
                         {
-                            Logs.LogMessage($"{user.Username}: Error starting new Quest", Logs.LOG_WARNING);
+                            Logs.LogMessage($"{user.Username}: Error starting new Focus", Logs.LOG_WARNING);
                         }
                     }
                     else
                     {
-                        Logs.LogMessage($"{user.Username}: Cannot start a new quest because the reward was not yet claimed.", Logs.LOG_WARNING);
+                        Logs.LogMessage($"{user.Username}: Cannot start a new Focus because the reward was not yet claimed.", Logs.LOG_WARNING);
                     }
                 }
             }
