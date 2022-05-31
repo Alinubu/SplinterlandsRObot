@@ -78,7 +78,7 @@
         public SpsAirdrop sps_airdrop { get; set; }
         public List<string> api_ops { get; set; }
     }
-    
+
     public class Abi
     {
         public string status { get; set; }
@@ -392,9 +392,16 @@
 
     public class LootChests
     {
-        public object? quest { get; set; }
+        public List<QuestLoot> quest { get; set; }
         public List<Season> season { get; set; }
         public Boosts boosts { get; set; }
+    }
+
+    public class QuestLoot
+    {
+        public int @base { get; set;}
+        public int max { get; set; }
+        public double step_multiplier { get; set; }
     }
 
     public class Networks

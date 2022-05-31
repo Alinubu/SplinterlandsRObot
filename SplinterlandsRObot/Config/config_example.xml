@@ -17,11 +17,9 @@
   </League>
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
-	<IgnoreECRLimit>false</IgnoreECRLimit><!--Bot will continue to play until quest is finished even if ECR limit is reached-->
-	<SleepAfterQuestCompleted>false</SleepAfterQuestCompleted><!--Account will sleep after quest completed until new quest available-->
+	<FocusRate>50</FocusRate><!--Percetange of the chance the bot will try play a Focused splinter each match (Range[0-100])-->
 	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
 	<ShowQuestRewards>true</ShowQuestRewards><!--After claiming the quest it will display a table with the rewards in the console-->
-	<DontClaimNearNextLeague>true</DontClaimNearNextLeague><!--When enabled, if rating is near a higher league and user has the power for it, it will wait to reach that league before claiming reward-->
 	<AvoidQuests>
 	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
 	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
