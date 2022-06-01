@@ -17,8 +17,15 @@ namespace SplinterlandsRObot
         public static bool ECR_WAIT_TO_RECHARGE { get; set; }
         public static double ECR_RECHARGE_LIMIT { get; set; }
         public static bool LEAGUE_ADVANCE_TO_NEXT { get; set; }
+        public static int LEAGUE_RATING_THRESHOLD { get; private set; }
         public static bool DO_QUESTS { get; set; }
         public static double FOCUS_RATE { get; private set; }
+        public static double SPLINTER_FOCUS_FIRE { get; set; }
+        public static double SPLINTER_FOCUS_WATER { get; set; }
+        public static double SPLINTER_FOCUS_EARTH { get; set; }
+        public static double SPLINTER_FOCUS_LIFE { get; set; }
+        public static double SPLINTER_FOCUS_DEATH { get; set; }
+        public static double SPLINTER_FOCUS_DRAGON { get; set; }
         public static bool CLAIM_QUEST_REWARDS { get; set; }
         public static bool SHOW_QUEST_REWARDS { get; private set; }
         public static bool AVOID_SPECIFIC_QUESTS { get; private set; }
@@ -64,11 +71,17 @@ namespace SplinterlandsRObot
             ECR_WAIT_TO_RECHARGE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ECR/WaitToRecharge", false, "false"));
             ECR_RECHARGE_LIMIT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ECR/RechargeLimit", false, "99"));
             LEAGUE_ADVANCE_TO_NEXT = Convert.ToBoolean(Helpers.ReadNode(rootNode, "League/AdvanceToNext", false, "true"));
+            LEAGUE_RATING_THRESHOLD = Convert.ToInt32(Helpers.ReadNode(rootNode, "League/AdvanceRatingThreshold", false, "0"));
             DO_QUESTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/DoQuests", false, "true"));
             FOCUS_RATE = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/FocusRate", false, "50"));
+            SPLINTER_FOCUS_FIRE = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Fire", false, "-1"));
+            SPLINTER_FOCUS_WATER = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Water", false, "-1"));
+            SPLINTER_FOCUS_EARTH = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Earth", false, "-1"));
+            SPLINTER_FOCUS_LIFE = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Life", false, "-1"));
+            SPLINTER_FOCUS_DEATH = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Death", false, "-1"));
+            SPLINTER_FOCUS_DRAGON = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Dragon", false, "-1"));
             CLAIM_QUEST_REWARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ClaimRewards", false, "true"));
             SHOW_QUEST_REWARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ShowQuestRewards", false, "true"));
-            
             AVOID_SPECIFIC_QUESTS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/AvoidQuests/Enabled", false, "false"));
             AVOID_SPECIFIC_QUESTS_LIST = Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList", false, "none") != "none" ? Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList").Split(';') : new string[0];
             PREFERRED_SUMMONERS = Helpers.ReadNode(rootNode, "Cards/PreferredSummoners", false, "");

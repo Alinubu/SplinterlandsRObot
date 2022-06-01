@@ -25,11 +25,11 @@ namespace SplinterlandsRObot.Game
         private UserBalance userBalance;
         private QuestData questData;
         private Quests quests;
+        private bool questCompleted = false;
         private CardsCollection CardsCached;
         private double ECRLimit = 0;
         private string questColor = "";
         private string questProgress = "";
-        private bool questCompleted = false;
         private bool questRenewed = false;
         private string currentSeason = "";
         private bool waitToRechargeECR = false;
@@ -182,11 +182,24 @@ namespace SplinterlandsRObot.Game
                     Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
 
                 questData = await SP_API.GetQuestData(UserData.Username);
+                questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
 
-                if (await quests.CheckForNewQuest(questData, UserData, questCompleted))
+                if (Settings.CLAIM_QUEST_REWARDS)
+                {
+                    if ((24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours) < 0 && questData.claim_trx_id == null && questData.earned_chests > 0)
+                    {
+                        Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
+                        if (await quests.ClaimQuestReward(questData, UserData, userDetails))
+                        {
+                            questData = await SP_API.GetQuestData(UserData.Username);
+                            await Task.Delay(5000);
+                        }
+                    }
+                }
+
+                if (await quests.CheckForNewQuest(questData, UserData))
                 {
                     questRenewed = false;
-                    questCompleted = false;
                     questData = await SP_API.GetQuestData(UserData.Username);
                 }
                     
@@ -218,20 +231,18 @@ namespace SplinterlandsRObot.Game
                                 questColor = quests.GetQuestColor(questData.name, UserData);
                             }
                         }
-                        questCompleted = false;
                     }
 
-                    questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
                     questProgress = quests.GetQuestProgress(questData.earned_chests, (int)questData.chest_tier, questData.rshares);
 
-                    prioritizeFocus = random.NextDouble() >= (Settings.FOCUS_RATE/100) ? false : true;
+                    prioritizeFocus = quests.IsFocusPrio(random, questColor);
 
-                    if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
+                    if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed)
                     {
                         if(Settings.AVOID_SPECIFIC_QUESTS_LIST.Length > 0 && Settings.AVOID_SPECIFIC_QUESTS_LIST.Any(x => x.Contains(questColor)))
                         {
                             Logs.LogMessage($"{UserData.Username}: Daily Focus blacklisted, requesting a new one...", Logs.LOG_ALERT);
-                            if (new Quests().RequestNewQuest(questData,UserData,questColor,questCompleted))
+                            if (quests.RequestNewQuest(questData,UserData,questColor))
                             {
                                 Logs.LogMessage($"{UserData.Username}: New Daily Focus received", Logs.LOG_SUCCESS);
                                 questRenewed = true;
@@ -243,7 +254,6 @@ namespace SplinterlandsRObot.Game
                                     questData = await SP_API.GetQuestData(UserData.Username);
                                     questColor = quests.GetQuestColor(questData.name, UserData);
                                 }
-                                questCompleted = false;
                                 APICounter = 99;
                             }
                             else
@@ -262,21 +272,6 @@ namespace SplinterlandsRObot.Game
                 else
                 {
                     Logs.LogMessage($"{UserData.Username}: Having issues requesting Daily Focus info", Logs.LOG_WARNING);
-                    questCompleted = false;
-                }
-
-                
-                if (Settings.CLAIM_QUEST_REWARDS)
-                {
-                    if ((24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours) < 0 && questData.claim_trx_id == null)
-                    {
-                        Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_SUCCESS);
-                        if (await new Quests().ClaimQuestReward(questData, UserData, userDetails))
-                        {
-                            questCompleted = true;
-                            APICounter = 99;
-                        }
-                    }
                 }
 
                 Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {userBalance.ECR}%", supress: true);
@@ -701,7 +696,7 @@ namespace SplinterlandsRObot.Game
         {
             try
             {
-                int highestPossibleLeague = GetMaxLeagueByRankAndPower(userDetails.rating, userDetails.collection_power);
+                int highestPossibleLeague = GetMaxLeagueByRankAndPower(userDetails.rating - Settings.LEAGUE_RATING_THRESHOLD, userDetails.collection_power);
                 if (highestPossibleLeague > userDetails.league && highestPossibleLeague <= (UserData.MaxLeague == 0 ? 13 : UserData.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
