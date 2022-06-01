@@ -195,8 +195,29 @@ namespace SplinterlandsRObot.Game
                     questColor = quests.GetQuestColor(questData.name, UserData);
                     if (questColor == "THISWILLBEREMOVEDATSOMEPOINT")
                     {
+                        if (questData.completed_items > 0 && questData.completed_items == questData.total_items)
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Old quest rewards found, trying to claim before requesting a new Focus", Logs.LOG_ALERT);
+                            quests.ClaimQuestReward(questData,UserData,userDetails);
+                        }
+                        Logs.LogMessage($"{UserData.Username}: Cannot find Focus name. Maybe old quest active, requesting a new Focus", Logs.LOG_ALERT);
+                        if (new HiveActions().StartQuest(UserData))
+                        {
+                            await Task.Delay(10000);
+
+                        }
                         questData = await SP_API.GetQuestData(UserData.Username);
                         questColor = quests.GetQuestColor(questData.name, UserData);
+                        if (questColor == "THISWILLBEREMOVEDATSOMEPOINT")
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Cannot find Focus name. Maybe old quest ongoing, requesting a new Focus a different way", Logs.LOG_ALERT);
+                            if (quests.RequestNewFocus(UserData))
+                            {
+                                await Task.Delay(10000);
+                                questData = await SP_API.GetQuestData(UserData.Username);
+                                questColor = quests.GetQuestColor(questData.name, UserData);
+                            }
+                        }
                         questCompleted = false;
                     }
 

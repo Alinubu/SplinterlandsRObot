@@ -108,6 +108,16 @@ namespace SplinterlandsRObot.Game
             }
             return false;
         }
+
+        public bool RequestNewFocus(User user)
+        {
+            if (new HiveActions().NewQuest(user))
+            {
+                return true;
+            }
+            return false;
+        }
+
         public async Task<bool> CheckForNewQuest(QuestData questData, User user, bool questCompleted)
         {
             if (questData != null)
@@ -159,12 +169,7 @@ namespace SplinterlandsRObot.Game
                 return SplinterlandsData.splinterlandsSettings.daily_quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.value;
             else
             {
-                Logs.LogMessage($"{user.Username}: Cannot find Focus name. Maybe old quest active, requesting a new Focus", Logs.LOG_ALERT);
-                if (new HiveActions().StartQuest(user))
-                {
-                    Thread.Sleep(10000);
-                    return "THISWILLBEREMOVEDATSOMEPOINT";
-                }
+                return "THISWILLBEREMOVEDATSOMEPOINT";
             }
 
             return "";
