@@ -183,9 +183,10 @@ namespace SplinterlandsRObot.Game
 
                 questData = await SP_API.GetQuestData(UserData.Username);
 
-                if (await new Quests().CheckForNewQuest(questData, UserData, questCompleted))
+                if (await quests.CheckForNewQuest(questData, UserData, questCompleted))
                 {
                     questRenewed = false;
+                    questCompleted = false;
                     questData = await SP_API.GetQuestData(UserData.Username);
                 }
                     
@@ -194,14 +195,36 @@ namespace SplinterlandsRObot.Game
                     questColor = quests.GetQuestColor(questData.name, UserData);
                     if (questColor == "THISWILLBEREMOVEDATSOMEPOINT")
                     {
+                        if (questData.completed_items > 0 && questData.completed_items == questData.total_items)
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Old quest rewards found, trying to claim before requesting a new Focus", Logs.LOG_ALERT);
+                            quests.ClaimQuestReward(questData,UserData,userDetails);
+                        }
+                        Logs.LogMessage($"{UserData.Username}: Cannot find Focus name. Maybe old quest active, requesting a new Focus", Logs.LOG_ALERT);
+                        if (new HiveActions().StartQuest(UserData))
+                        {
+                            await Task.Delay(10000);
+
+                        }
                         questData = await SP_API.GetQuestData(UserData.Username);
                         questColor = quests.GetQuestColor(questData.name, UserData);
+                        if (questColor == "THISWILLBEREMOVEDATSOMEPOINT")
+                        {
+                            Logs.LogMessage($"{UserData.Username}: Cannot find Focus name. Maybe old quest ongoing, requesting a new Focus a different way", Logs.LOG_ALERT);
+                            if (quests.RequestNewFocus(UserData))
+                            {
+                                await Task.Delay(10000);
+                                questData = await SP_API.GetQuestData(UserData.Username);
+                                questColor = quests.GetQuestColor(questData.name, UserData);
+                            }
+                        }
+                        questCompleted = false;
                     }
 
                     questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
                     questProgress = quests.GetQuestProgress(questData.earned_chests, (int)questData.chest_tier, questData.rshares);
 
-                    prioritizeFocus = random.NextDouble() >= (Settings.FOCUS_RATE/100) ? true : false;
+                    prioritizeFocus = random.NextDouble() >= (Settings.FOCUS_RATE/100) ? false : true;
 
                     if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed && !questCompleted)
                     {
@@ -220,6 +243,7 @@ namespace SplinterlandsRObot.Game
                                     questData = await SP_API.GetQuestData(UserData.Username);
                                     questColor = quests.GetQuestColor(questData.name, UserData);
                                 }
+                                questCompleted = false;
                                 APICounter = 99;
                             }
                             else
@@ -232,7 +256,7 @@ namespace SplinterlandsRObot.Game
                     if (Settings.DO_QUESTS)
                         Logs.LogMessage($"{UserData.Username}: Current Focus: {questColor}", Logs.LOG_ALERT, true);
 
-                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questColor}:{questProgress}";
+                    InstanceManager.UsersStatistics[botInstance].Quest = $"{questColor}[{questProgress}]";
                     InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours).ToString();
                 }
                 else

@@ -1,5 +1,6 @@
-﻿Version 1.1.1 is released
+﻿Version 1.1.2 is released
 
 Changes:
-    - Adjusted bot with the new Daily Focus changes
-    - Added new option in config file. FocusRate: Percetange of the chance the bot will try play a Focused splinter each match (Range[0-100])
+    - Fixed bug with Focus Rate having a reversed behaviour
+    - Fixed a bug that would not reset the Focus state (completed)
+    - Fixed a bug with transition from Old Quest to new Focus

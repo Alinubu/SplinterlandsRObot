@@ -17,7 +17,7 @@ namespace SplinterlandsRObot.Game
 
             int neededRshares = totalEarnedChests == 0 ? baseRshares : totalEarnedChests == 1 ? Convert.ToInt32(baseRshares + (baseRshares * multiplier)) : Convert.ToInt32((totalEarnedChests - 1) * (baseRshares * multiplier) + baseRshares);
 
-            string response = $"C:{totalEarnedChests}/{maxChests}|FP:{rshares}/{neededRshares}";
+            string response = $"{totalEarnedChests}/{maxChests}|{rshares}/{neededRshares}";
             return response;
         }
 
@@ -108,28 +108,38 @@ namespace SplinterlandsRObot.Game
             }
             return false;
         }
+
+        public bool RequestNewFocus(User user)
+        {
+            if (new HiveActions().NewQuest(user))
+            {
+                return true;
+            }
+            return false;
+        }
+
         public async Task<bool> CheckForNewQuest(QuestData questData, User user, bool questCompleted)
         {
             if (questData != null)
             {
-                if (questCompleted && (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 23)
+                if (questCompleted && (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24)
                 {
                     if (questData.claim_trx_id != null)
                     {
-                        Logs.LogMessage($"{user.Username}: New Quest available, requesting from Splinterlands...");
+                        Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
                         if (new HiveActions().StartQuest(user))
                         {
-                            Logs.LogMessage($"{user.Username}: New Quest started", Logs.LOG_SUCCESS);
+                            Logs.LogMessage($"{user.Username}: New Focus started", Logs.LOG_SUCCESS);
                             return true;
                         }
                         else
                         {
-                            Logs.LogMessage($"{user.Username}: Error starting new Quest", Logs.LOG_WARNING);
+                            Logs.LogMessage($"{user.Username}: Error starting new Focus", Logs.LOG_WARNING);
                         }
                     }
                     else
                     {
-                        Logs.LogMessage($"{user.Username}: Cannot start a new quest because the reward was not yet claimed.", Logs.LOG_WARNING);
+                        Logs.LogMessage($"{user.Username}: Cannot start a new Focus because the reward was not yet claimed.", Logs.LOG_WARNING);
                     }
                 }
             }
@@ -159,12 +169,7 @@ namespace SplinterlandsRObot.Game
                 return SplinterlandsData.splinterlandsSettings.daily_quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.value;
             else
             {
-                Logs.LogMessage($"{user.Username}: Cannot find Focus name. Maybe old quest active, requesting a new Focus", Logs.LOG_ALERT);
-                if (new HiveActions().StartQuest(user))
-                {
-                    Thread.Sleep(10000);
-                    return "THISWILLBEREMOVEDATSOMEPOINT";
-                }
+                return "THISWILLBEREMOVEDATSOMEPOINT";
             }
 
             return "";
