@@ -14,10 +14,19 @@
   </ECR>
   <League>
 	<AdvanceToNext>true</AdvanceToNext><!--Bot will advance user to a higher league (Bronze->Silver, Silver->Gold)-->
+	<AdvanceRatingThreshold>100</AdvanceRatingThreshold><!--Set a threshold for the rating to be above the league limit before the bot will advance to the next one-->
   </League>
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
 	<FocusRate>50</FocusRate><!--Percetange of the chance the bot will try play a Focused splinter each match (Range[0-100])-->
+	<SplinterFocusOverride><!--You can set a Focus override value for each of the Splinters (Range[0-100], -1 for disabled)-->
+	  <Fire>-1</Fire>
+	  <Water>-1</Water>
+	  <Earth>-1</Earth>
+	  <Life>-1</Life>
+	  <Death>-1</Death>
+	  <Dragon>-1</Dragon>
+	</SplinterFocusOverride>
 	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
 	<ShowQuestRewards>true</ShowQuestRewards><!--After claiming the quest it will display a table with the rewards in the console-->
 	<AvoidQuests>
