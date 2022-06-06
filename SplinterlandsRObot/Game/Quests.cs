@@ -107,7 +107,7 @@ namespace SplinterlandsRObot.Game
             if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24 && questData.claim_trx_id != null)
                 questCompleted = true;
             else if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours < 24 && questData.claim_trx_id == null)
-                questCompleted = true;
+                questCompleted = false;
 
             if (questData != null && Settings.AVOID_SPECIFIC_QUESTS_LIST.Contains(questColor) && !questCompleted)
             {
