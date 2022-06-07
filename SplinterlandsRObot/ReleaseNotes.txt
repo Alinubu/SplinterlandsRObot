@@ -3,3 +3,4 @@
 Changes:
     - fixed AvoidQuest bug
     - fixed a bug for accounts moving from old quest to new focus system
+    - fixed the FP needed shares not showing correctly

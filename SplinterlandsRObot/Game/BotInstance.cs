@@ -703,7 +703,6 @@ namespace SplinterlandsRObot.Game
                 if (highestPossibleLeague > userDetails.league && highestPossibleLeague <= (UserData.MaxLeague == 0 ? 13 : UserData.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
-                    APICounter = 100; // set api counter to 100 to reload details
 
                     string tx = HiveActions.AdvanceLeague(UserData);
                     if (await WaitForTransactionSuccess(tx, 45))
