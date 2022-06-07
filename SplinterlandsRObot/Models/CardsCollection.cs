@@ -1,4 +1,4 @@
-﻿namespace SplinterlandsRObot.Constructors
+﻿namespace SplinterlandsRObot.Models
 {
     public class CardsCollection
     {

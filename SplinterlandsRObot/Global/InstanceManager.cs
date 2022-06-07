@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using HiveAPI.CS;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Game;
 
 namespace SplinterlandsRObot

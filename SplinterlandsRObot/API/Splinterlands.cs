@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Net;
 
 namespace SplinterlandsRObot.API

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SplinterlandsRObot.API;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Hive;
 
 namespace SplinterlandsRObot.Game

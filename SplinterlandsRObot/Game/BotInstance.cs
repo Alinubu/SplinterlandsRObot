@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Classes.Net;
 using SplinterlandsRObot.Hive;
 using SplinterlandsRObot.API;

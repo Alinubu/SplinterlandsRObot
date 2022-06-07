@@ -2,7 +2,7 @@
 using HiveAPI.CS;
 using System.Text;
 using System.Xml;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Hive;
 using SplinterlandsRObot.API;
 using SplinterlandsRObot.Global;
