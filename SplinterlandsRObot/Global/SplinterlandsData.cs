@@ -1,4 +1,4 @@
-﻿using SplinterlandsRObot.Constructors;
+﻿using SplinterlandsRObot.Models;
 
 namespace SplinterlandsRObot
 {

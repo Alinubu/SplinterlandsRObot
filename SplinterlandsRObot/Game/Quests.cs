@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SplinterlandsRObot.API;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Hive;
 
 namespace SplinterlandsRObot.Game
@@ -15,7 +15,7 @@ namespace SplinterlandsRObot.Game
             int maxChests = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].max;
             double multiplier = SplinterlandsData.splinterlandsSettings.loot_chests.quest[chest_tier].step_multiplier;
 
-            int neededRshares = totalEarnedChests == 0 ? baseRshares : totalEarnedChests == 1 ? Convert.ToInt32(baseRshares + (baseRshares * multiplier)) : Convert.ToInt32((totalEarnedChests - 1) * (baseRshares * multiplier) + baseRshares);
+            int neededRshares = GetFocusPointsNeeded(baseRshares, multiplier, rshares);
 
             string response = $"{totalEarnedChests}/{maxChests}|{rshares}/{neededRshares}";
             return response;
@@ -35,6 +35,16 @@ namespace SplinterlandsRObot.Game
             }
 
             return chests;
+        }
+
+        internal int GetFocusPointsNeeded(int baseRshares, double multiplier, double rshares)
+        {
+            int fp_limit = baseRshares;
+            while (rshares > fp_limit)
+            {
+                fp_limit = Convert.ToInt32(baseRshares + fp_limit * multiplier);
+            }
+            return fp_limit;
         }
 
         public async Task<bool> ClaimQuestReward(QuestData questData, User user, UserDetails userDetails)
@@ -97,7 +107,7 @@ namespace SplinterlandsRObot.Game
             if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24 && questData.claim_trx_id != null)
                 questCompleted = true;
             else if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours < 24 && questData.claim_trx_id == null)
-                questCompleted = true;
+                questCompleted = false;
 
             if (questData != null && Settings.AVOID_SPECIFIC_QUESTS_LIST.Contains(questColor) && !questCompleted)
             {

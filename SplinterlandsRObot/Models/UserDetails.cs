@@ -1,4 +1,4 @@
-﻿namespace SplinterlandsRObot.Constructors
+﻿namespace SplinterlandsRObot.Models
 {
     public class UserDetails
     {
@@ -14,7 +14,7 @@
         public int champion_points { get; set; }
         public double? capture_rate { get; set; }
         public int? last_reward_block { get; set; }
-        public object guild { get; set; }
+        public object? guild { get; set; }
         public bool starter_pack_purchase { get; set; }
         public int avatar_id { get; set; }
         public object? display_name { get; set; }

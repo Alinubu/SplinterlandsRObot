@@ -1,4 +1,4 @@
-﻿namespace SplinterlandsRObot.Constructors
+﻿namespace SplinterlandsRObot.Models
 {
     public class CardsCollection
     {
@@ -35,5 +35,6 @@
         public int? lock_days { get; set; }
         public object? unlock_date { get; set; }
         public int? level { get; set; }
+        public bool? renew_allowed { get; set; }
     }
 }

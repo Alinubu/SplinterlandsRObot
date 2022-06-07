@@ -40,6 +40,7 @@ namespace SplinterlandsRObot
         public static double CP_PER_DEC_LIMIT { get; set; }
         public static string DAYS_TO_RENT { get; set; }
         public static bool RENT_SPECIFIC_CARDS { get; private set; }
+        public static bool RENT_FOR_FOCUS { get; private set; }
         public static bool RENT_FOR_POWER { get; private set; }
         public static int MINIMUM_POWER_TO_RENT { get; private set; }
         public static bool RENEW_RENTALS { get; private set; }
@@ -91,6 +92,7 @@ namespace SplinterlandsRObot
             USE_RENTAL_BOT = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/UseRentalBot", false, "false"));
             BATTLE_WHILE_RENTING = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/BattleWhileRenting", false, "false"));
             RENT_SPECIFIC_CARDS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentSpecificCards", false, "false"));
+            //RENT_FOR_FOCUS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForFocus", false, "false"));
             RENT_FOR_POWER = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForPower", false, "false"));
             RENT_GOLD_ONLY = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentGoldOnly", false, "false"));
             CP_PER_DEC_LIMIT = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/CPperDecLimit", false, "250"));

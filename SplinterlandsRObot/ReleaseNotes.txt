@@ -1,7 +1,6 @@
-﻿Version 1.1.3
+﻿Version 1.1.4
 
 Changes:
-    - Fixed renewing Focus after 24h complition
-    - Added option to set FocusRate on individual Splinter
-    - Added option to set a threshold for the rating to be above the league limit before the bot will advance to the next one
-    - Fixed a bug in the Reward chests calculation
+    - fixed AvoidQuest bug
+    - fixed a bug for accounts moving from old quest to new focus system
+    - fixed the FP needed shares not showing correctly

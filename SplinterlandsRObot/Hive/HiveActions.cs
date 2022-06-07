@@ -2,7 +2,7 @@
 using HiveAPI.CS;
 using static HiveAPI.CS.CHived;
 using SplinterlandsRObot.Net;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Cryptography.ECDSA;

@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using Websocket.Client;
 using Websocket.Client.Models;
 using SplinterlandsRObot.Hive;

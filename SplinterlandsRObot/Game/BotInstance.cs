@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Constructors;
+using SplinterlandsRObot.Models;
 using SplinterlandsRObot.Classes.Net;
 using SplinterlandsRObot.Hive;
 using SplinterlandsRObot.API;
@@ -182,27 +182,7 @@ namespace SplinterlandsRObot.Game
                     Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
 
                 questData = await SP_API.GetQuestData(UserData.Username);
-                questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
-
-                if (Settings.CLAIM_QUEST_REWARDS)
-                {
-                    if ((24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours) < 0 && questData.claim_trx_id == null && questData.earned_chests > 0)
-                    {
-                        Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
-                        if (await quests.ClaimQuestReward(questData, UserData, userDetails))
-                        {
-                            questData = await SP_API.GetQuestData(UserData.Username);
-                            await Task.Delay(5000);
-                        }
-                    }
-                }
-
-                if (await quests.CheckForNewQuest(questData, UserData))
-                {
-                    questRenewed = false;
-                    questData = await SP_API.GetQuestData(UserData.Username);
-                }
-                    
+                
                 if (questData != null)
                 {
                     questColor = quests.GetQuestColor(questData.name, UserData);
@@ -233,9 +213,32 @@ namespace SplinterlandsRObot.Game
                         }
                     }
 
+                    questData.earned_chests = quests.CalculateEarnedChests((int)questData.chest_tier, questData.rshares);
+                    questRenewed = questData.refresh_trx_id != null ? true : false;
+
+                    if (Settings.CLAIM_QUEST_REWARDS)
+                    {
+                        if ((24 - (DateTime.Now - questData.created_date.ToLocalTime()).TotalHours) < 0 && questData.claim_trx_id == null && questData.earned_chests > 0)
+                        {
+                            Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
+                            if (await quests.ClaimQuestReward(questData, UserData, userDetails))
+                            {
+                                questData = await SP_API.GetQuestData(UserData.Username);
+                                await Task.Delay(5000);
+                            }
+                        }
+                    }
+
+                    if (await quests.CheckForNewQuest(questData, UserData))
+                    {
+                        questRenewed = false;
+                        questData = await SP_API.GetQuestData(UserData.Username);
+                    }
+
                     questProgress = quests.GetQuestProgress(questData.earned_chests, (int)questData.chest_tier, questData.rshares);
 
-                    prioritizeFocus = quests.IsFocusPrio(random, questColor);
+                    if (Settings.DO_QUESTS)
+                        prioritizeFocus = quests.IsFocusPrio(random, questColor);
 
                     if (Settings.DO_QUESTS && Settings.AVOID_SPECIFIC_QUESTS && !questRenewed)
                     {
@@ -700,7 +703,6 @@ namespace SplinterlandsRObot.Game
                 if (highestPossibleLeague > userDetails.league && highestPossibleLeague <= (UserData.MaxLeague == 0 ? 13 : UserData.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
-                    APICounter = 100; // set api counter to 100 to reload details
 
                     string tx = HiveActions.AdvanceLeague(UserData);
                     if (await WaitForTransactionSuccess(tx, 45))

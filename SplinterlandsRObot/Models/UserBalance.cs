@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SplinterlandsRObot.Constructors
+namespace SplinterlandsRObot.Models
 {
     public class UserBalance
     {
