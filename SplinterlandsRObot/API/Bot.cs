@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SplinterlandsRObot.Models;
-using SplinterlandsRObot.Extensions;
+using SplinterlandsRObot.Models.Account;
+using SplinterlandsRObot.Models.Bot;
 using SplinterlandsRObot.Net;
 
 namespace SplinterlandsRObot.API
@@ -23,19 +24,19 @@ namespace SplinterlandsRObot.API
             }
             return Convert.ToBoolean(result);
         }
-        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool prioritizeFocus, bool usePrivateApi)
+        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool prioritizeFocus, Config config, bool usePrivateApi)
         {
 
             APIGetTeamPostData data = new APIGetTeamPostData()
             {
                 matchDetails = matchDetails,
-                questDetails = new JObject() { new JProperty("quest_color", questColor), new JProperty("quest_completed", questCompleted), new JProperty("do_quest", Settings.DO_QUESTS) },
+                questDetails = new JObject() { new JProperty("quest_color", questColor), new JProperty("quest_completed", questCompleted), new JProperty("do_quest", config.FocusEnabled) },
                 playerCards = playerCards,
-                preferredSummoners = Settings.PREFERRED_SUMMONERS,
+                preferredSummoners = config.PreferredSummoners,
                 username = user,
                 league = league,
-                replaceStarterCards = Settings.REPLACE_STARTER_CARDS,
-                useStarterCards = Settings.USE_STARTER_CARDS,
+                replaceStarterCards = config.ReplaceStarterCards,
+                useStarterCards = config.UseStarterCards,
                 prioritizeFocus = prioritizeFocus
 
             };
@@ -57,17 +58,17 @@ namespace SplinterlandsRObot.API
             if (responseString.Contains("API Limit exceeded"))
             {
                 Logs.LogMessage($"{user}: Public api limit Reached", Logs.LOG_ALERT);
-                return null;
+                throw new Exception();
             }
             else if (responseString.Contains("Timeout, api overloaded"))
             {
                 Logs.LogMessage($"{user}: Api timout, contact support", Logs.LOG_WARNING);
-                return null;
+                throw new Exception();
             }
             else if (responseString.Contains("User not allowed to use Premium features. Please subscribe"))
             {
                 Logs.LogMessage($"{user}: User not allowed to use Premium features. Please subscribe", Logs.LOG_WARNING);
-                return null;
+                throw new Exception();
             }
 
             dynamic result = JValue.Parse(responseString);

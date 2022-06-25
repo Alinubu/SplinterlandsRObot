@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
+using SplinterlandsRObot.Models.Account;
 
-namespace SplinterlandsRObot.Models
+namespace SplinterlandsRObot.Models.Bot
 {
     public class APIGetTeamPostData
     {

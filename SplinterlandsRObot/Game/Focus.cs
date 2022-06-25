@@ -1,11 +1,9 @@
-﻿using Newtonsoft.Json;
-using SplinterlandsRObot.API;
-using SplinterlandsRObot.Models;
-using SplinterlandsRObot.Hive;
+﻿using SplinterlandsRObot.Hive;
+using SplinterlandsRObot.Models.Account;
 
 namespace SplinterlandsRObot.Game
 {
-    public class Quests
+    public class Focus
     {
         public string GetQuestProgress(int totalEarnedChests, int chest_tier, double rshares)
         {
@@ -47,52 +45,13 @@ namespace SplinterlandsRObot.Game
             return fp_limit;
         }
 
-        public async Task<bool> ClaimQuestReward(QuestData questData, User user, UserDetails userDetails)
+        public async Task<bool> ClaimQuestReward(Quest questData, User user)
         {
             try
             {
                 string tx = new HiveActions().ClaimQuest(user, questData.id);
                 Logs.LogMessage($"{user.Username}: Claimed Daily Focus reward. Tx:{tx}");
 
-                if (Settings.SHOW_QUEST_REWARDS)
-                {
-                    await Task.Delay(15000);
-                    string txResponse = await new Splinterlands().GetTransactionDetails(tx);
-                    string responseClean = txResponse.Replace("\"{", "{").Replace("}\"", "}").Replace(@"\", "");
-
-                    QuestRewardData rewardData = JsonConvert.DeserializeObject<QuestRewardData>(responseClean);
-                    if (rewardData.trx_info.result.success == true)
-                    {
-                        string[] rewards = new string[rewardData.trx_info.result.rewards.Count];
-                        int i = 0;
-                        foreach (QuestReward reward in rewardData.trx_info.result.rewards)
-                        {
-                            if (reward.type == "reward_card")
-                            {
-                                rewards[i] = $"{reward.quantity} x {(reward.card.gold ? "(Gold)" : "")} {SplinterlandsData.splinterlandsCards.Where(x => x.id == reward.card.card_detail_id).First().name}";
-                            }
-                            else if (reward.type == "potion")
-                            {
-                                rewards[i] = $"{reward.quantity} x {(reward.potion_type == "gold" ? "Gold" : "Legedary")} Potion";
-                            }
-                            else if (reward.type == "credits")
-                            {
-                                rewards[i] = $"{reward.quantity} x Credits";
-                            }
-                            else if (reward.type == "dec")
-                            {
-                                rewards[i] = $"{reward.quantity} x DEC";
-                            }
-                            else if (reward.type == "pack")
-                            {
-                                rewards[i] = $"{reward.quantity} x Packs";
-                            }
-                            i++;
-                        }
-
-                        Logs.OutputQuestRewards(user.Username, rewards);
-                    }
-                }
                 return true;
             }
             catch (Exception ex)
@@ -101,15 +60,16 @@ namespace SplinterlandsRObot.Game
             }
             return false;
         }
-        public bool RequestNewQuest(QuestData questData, User user, string questColor)
-        {
-            bool questCompleted = false;
-            if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24 && questData.claim_trx_id != null)
-                questCompleted = true;
-            else if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours < 24 && questData.claim_trx_id == null)
-                questCompleted = false;
 
-            if (questData != null && Settings.AVOID_SPECIFIC_QUESTS_LIST.Contains(questColor) && !questCompleted)
+        public bool RequestNewFocus(Quest questData, User user)
+        {
+            bool focusCompleted = false;
+            if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24 && questData.claim_trx_id != null)
+                focusCompleted = true;
+            else if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours < 24 && questData.claim_trx_id == null)
+                focusCompleted = false;
+
+            if (questData != null && !focusCompleted)
             {
                 if (new HiveActions().NewQuest(user))
                 {
@@ -128,7 +88,7 @@ namespace SplinterlandsRObot.Game
             return false;
         }
 
-        public async Task<bool> CheckForNewQuest(QuestData questData, User user)
+        public async Task<bool> CheckForNewFocus(Quest questData, User user)
         {
             if (questData != null)
             {
@@ -137,7 +97,7 @@ namespace SplinterlandsRObot.Game
                     if (questData.claim_trx_id != null && questData.earned_chests > 0)
                     {
                         Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
-                        if (new HiveActions().StartQuest(user))
+                        if (new HiveActions().StartFocus(user))
                         {
                             Logs.LogMessage($"{user.Username}: New Focus started", Logs.LOG_SUCCESS);
                             return true;
@@ -150,7 +110,7 @@ namespace SplinterlandsRObot.Game
                     else if (questData.claim_trx_id == null && questData.earned_chests == 0)
                     {
                         Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
-                        if (new HiveActions().StartQuest(user))
+                        if (new HiveActions().StartFocus(user))
                         {
                             Logs.LogMessage($"{user.Username}: New Focus started", Logs.LOG_SUCCESS);
                             return true;
@@ -186,7 +146,7 @@ namespace SplinterlandsRObot.Game
             return response;
         }
 
-        public string GetQuestColor(string questName, User user)
+        public string GetFocusSplinter(string questName)
         {
             if (SplinterlandsData.splinterlandsSettings.daily_quests.Where(x => x.active == true && x.name == questName).Any())
                 return SplinterlandsData.splinterlandsSettings.daily_quests.Where(x => x.active == true && x.name == questName).FirstOrDefault().data.value;

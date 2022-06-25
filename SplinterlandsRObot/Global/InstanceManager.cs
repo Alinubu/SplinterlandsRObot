@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using HiveAPI.CS;
-using SplinterlandsRObot.Models;
+using SplinterlandsRObot.Models.Account;
 using SplinterlandsRObot.Game;
 
 namespace SplinterlandsRObot
@@ -14,7 +14,7 @@ namespace SplinterlandsRObot
         public static object StartBattleLock = new();
         public static HttpClient HttpClient = new();
         public static CookieContainer CookieContainer = new();
-        public static CHived oHived;
+        public static bool isRentingServiceRunning = false;
         public static void CreateUsersInstance()
         {
             userList = new Users().GetUsers();
@@ -22,7 +22,6 @@ namespace SplinterlandsRObot
 
         public static void CreateBotInstances(List<User> userList)
         {
-            oHived = new CHived(HttpClient, Constants.HIVE_NODE);
             int index = 0;
             foreach (User user in userList)
             {

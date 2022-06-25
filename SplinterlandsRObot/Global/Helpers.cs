@@ -22,7 +22,9 @@ namespace SplinterlandsRObot.Global
                 }
                 else
                 {
-                    Logs.LogMessage($"Value for {childPath} is not set or is missing in configuration files. Default value set to [{defaultValue}]", Logs.LOG_ALERT);
+                    if (childPath != "ConfigFile")
+                        Logs.LogMessage($"Value for {childPath} is not set or is missing in configuration files. Default value set to [{defaultValue}]", Logs.LOG_ALERT);
+
                     return defaultValue;
                 }
             }

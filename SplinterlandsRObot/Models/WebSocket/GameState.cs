@@ -1,6 +1,6 @@
-﻿namespace SplinterlandsRObot.Models
+﻿namespace SplinterlandsRObot.Models.WebSocket
 {
-    public enum GameState
+    public enum WebsocketMessages
     {
         match_found,
         opponent_submit_team,

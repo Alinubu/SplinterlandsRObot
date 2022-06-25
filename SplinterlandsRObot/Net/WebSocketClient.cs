@@ -1,34 +1,36 @@
 ﻿using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Models;
+using SplinterlandsRObot.Models.WebSocket;
 using Websocket.Client;
 using Websocket.Client.Models;
-using SplinterlandsRObot.Hive;
 using SplinterlandsRObot.Global;
+using SplinterlandsRObot.Game;
 
 namespace SplinterlandsRObot.Classes.Net
 {
-    public class WebSocketClient
+    public class WebSocket
     {
-        public WebsocketClient websocketClient;
+        public WebsocketClient client;
+        private BotInstance instance { get; set; }
         private string username { get; set; }
         private string accessToken { get; set; }
-        public Dictionary<GameState,JToken> states { get; set; }
+        public List<WebsoketTransactionMessage> transactions { get; set; }
 
-        public WebSocketClient(string _username, string _accessToken)
+        public WebSocket(string _username, string _accessToken, BotInstance _instance)
         {
+            instance = _instance;
             username = _username;
             accessToken = _accessToken;
-            states = new Dictionary<GameState, JToken>();
-            websocketClient = new WebsocketClient(new Uri(Constants.SPLINTERLANDS_WEBSOCKET_URL));
-            websocketClient.ReconnectTimeout = new TimeSpan(0, 5, 0);
-            websocketClient.MessageReceived.Subscribe(OnMessageReceived);
-            websocketClient.ReconnectionHappened.Subscribe(OnReconnectionHappened);
-            websocketClient.DisconnectionHappened.Subscribe(OnDisconnectionHappened);
+            transactions = new List<WebsoketTransactionMessage();
+            client = new WebsocketClient(new Uri(Constants.SPLINTERLANDS_WEBSOCKET_URL));
+            client.ReconnectTimeout = null;
+            client.MessageReceived.Subscribe(OnMessageReceived);
+            client.ReconnectionHappened.Subscribe(OnReconnectionHappened);
+            client.DisconnectionHappened.Subscribe(OnDisconnectionHappened);
         }
 
         public async Task WebsocketStart()
         {
-            await websocketClient.Start();
+            await client.Start();
             WebsocketAuthenticate();
             //_ = WebsocketPingLoop().ConfigureAwait(false);
         }
@@ -40,23 +42,23 @@ namespace SplinterlandsRObot.Classes.Net
         }
         public void WebsocketSendMessage(string message)
         {
-            websocketClient.Send(message);
+            client.Send(message);
         }
         public void WebsocketPing()
         {
             Logs.LogMessage($"{username}: ping", supress: true);
-            websocketClient.Send("{\"type\":\"ping\"}");
+            client.Send("{\"type\":\"ping\"}");
         }
         private async Task WebsocketPingLoop()
         {
-            while (websocketClient.IsStarted)
+            while (client.IsStarted)
             {
                 try
                 {
                     for (int i = 0; i < 3; i++)
                     {
                         await Task.Delay(20 * 1000);
-                        if (!websocketClient.IsStarted)
+                        if (!client.IsStarted)
                         {
                             return;
                         }
@@ -74,7 +76,7 @@ namespace SplinterlandsRObot.Classes.Net
                 }
             }
         }
-        public async Task<bool> WaitForStateChange(GameState state, int secondsToWait = 0)
+        public async Task<bool> WaitForStateChange(WebsocketMessages state, int secondsToWait = 0)
         {
             int maxI = secondsToWait > 0 ? secondsToWait : 1;
             for (int i = 0; i < maxI; i++)
@@ -92,11 +94,11 @@ namespace SplinterlandsRObot.Classes.Net
         }
         public async Task WebsocketStop(string stopDescription)
         {
-            await websocketClient.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, stopDescription);
+            await client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, stopDescription);
         }
         public void WebsocketDispose()
         {
-            websocketClient.Dispose();
+            client.Dispose();
         }
         private void OnMessageReceived(ResponseMessage message)
         {
@@ -106,7 +108,19 @@ namespace SplinterlandsRObot.Classes.Net
                 return;
             }
             JToken json = JToken.Parse(message.Text);
-            if (Enum.TryParse(json["id"].ToString(), out GameState state))
+
+            string messageType = json["id"].ToString();
+
+            if (messageType == "rating_update")
+            {
+                if (json["data"].ToString().Contains("new_rating"))
+                {
+
+                }
+                instance.UpdateRating();
+            }
+
+            if (Enum.TryParse(json["id"].ToString(), out WebsocketMessages state))
             {
                 Thread.Sleep(1000);
                 if (states.ContainsKey(state))

@@ -1,4 +1,4 @@
-﻿namespace SplinterlandsRObot.Models
+﻿namespace SplinterlandsRObot.Models.Account
 {
     public class UserStats
     {
@@ -14,10 +14,10 @@
         public string? RatingChange { get; set; }
         public string? League { get; set; }
         public int? CollectionPower { get; set; }
-        public string? Quest { get; set; }
+        public string? Focus { get; set; }
         public string? HoursUntilNextQuest { get; set; }
         public DateTime NextMatchIn { get; set; }
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
 
     }
 }

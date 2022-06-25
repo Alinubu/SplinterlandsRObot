@@ -12,6 +12,9 @@ class Program
     private static string identifier;
     static Task Main(string[] args)
     {
+        CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken token = cancellationTokenSource.Token;
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Console.Title = "Splinterlands Bot";
@@ -22,27 +25,23 @@ class Program
 
             if (Environment.OSVersion.Version.Major < 10)
             {
-                Console.WriteLine("Windows 7 detected, running bot in Legacy Mode");
-                Settings.WINDOWS7 = true;
-                Console.Title = "Splinterlands Bot - Legacy Mode";
-            }
-            else
-            {
-                Settings.WINDOWS7 = false;
+                Console.WriteLine("This Windows version is no longer supported, please use Windows 10 or above.");
+                Logs.LogMessage("Press any key to exit...");
+                Console.ReadLine();
+                Environment.Exit(0);
             }
         }
 
         identifier = GetMachineIdentifier();
 
-        Settings.ParseConfigFile();
-        Logs.LogMessage("Config file loaded", Logs.LOG_SUCCESS);
+        Settings.LoadSettings();
+        Logs.LogMessage("Bot settings loaded", Logs.LOG_SUCCESS);
         SplinterlandsData.splinterlandsCards = Task.Run(() => new Splinterlands().GetSplinterlandsCards()).Result;
         SplinterlandsData.splinterlandsSettings = Task.Run(() => new Splinterlands().GetSplinterlandsSettings()).Result;
         InstanceManager.CreateUsersInstance();
         InstanceManager.CreateBotInstances(InstanceManager.userList);
         Settings.CheckThreads();
-        CancellationTokenSource cancellationTokenSource = new();
-        CancellationToken token = cancellationTokenSource.Token;
+        
 
         Console.CancelKeyPress += (sender, eArgs) =>
         {
@@ -115,7 +114,6 @@ class Program
                         {
                             firstRuntrough = false;
                             nextBotInstance = 0;
-                            if (Settings.SHOW_BATTLE_RESULTS && Settings.DO_BATTLE) Logs.OutputStat();
                         }
 
                         while (InstanceManager.BotInstances.All(x => x.CurrentlyActive
@@ -137,7 +135,7 @@ class Program
                             nextBotInstance++;
                             nextBotInstance = nextBotInstance >= InstanceManager.BotInstances.Count ? 0 : nextBotInstance;
                         }
-                        // create local copies for thread safety
+
                         int botInstance = nextBotInstance;
 
                         instances.Add(Task.Run(async () =>

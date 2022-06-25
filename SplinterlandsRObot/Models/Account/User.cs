@@ -1,0 +1,14 @@
+﻿namespace SplinterlandsRObot.Models.Account
+{
+    public class User
+    {
+        public string Username { get; set; }
+        public Keys Keys { get; set; }
+        public string ConfigFile { get; set; }
+    }
+    public class Keys
+    {
+        public string? ActiveKey { get; set; }
+        public string PostingKey { get; set; }
+    }
+}

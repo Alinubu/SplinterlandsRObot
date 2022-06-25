@@ -4,9 +4,6 @@
 	<username>username</username><!--Hive username withous @-->
 	<postingKEY>5XXXX</postingKEY>
 	<activeKEY>5XXXX</activeKEY><!--Only used for Pro Features-->
-	<powerLimit>1000</powerLimit><!--Used by Rental Bot (Not available yet)-->
-	<ECROverride>0</ECROverride><!--Can set a value different from Config ECRLimit for specific user. 0 is disabled-->
-	<MaxLeague>0</MaxLeague><!--Offers the option to advance until a specific league. Options: 0(Disabled) 1(Bronze) 4(Silver) 7(Gold) 10(Diamond) 13(Champion)-->
-	<RentFile>rentcards_example.xml</RentFile><!--Used when having Rent Specific Cards enabled. You can set the same file for multiple users or have groups of users use different files-->
+	<ConfigFile>config.xml</ConfigFile><!--Optional-->
   </user>
 </users>
