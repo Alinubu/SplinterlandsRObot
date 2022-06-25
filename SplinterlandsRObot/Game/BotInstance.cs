@@ -87,6 +87,31 @@ namespace SplinterlandsRObot.Game
             
             WebSocket = new WebSocket(UserData.Username,UserDetails.token, this);
         }
+
+        internal void UpdateLeague(int v)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void UpdateMaxLeague(int v)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void UpdateSeasonRewardShares(int v)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void UpdateRating(int v)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void UpdateCollectionPower(int v)
+        {
+            throw new NotImplementedException();
+        }
         #endregion
 
         public async Task<DateTime> DoBattleAsync(int botInstance)
@@ -450,6 +475,11 @@ namespace SplinterlandsRObot.Game
                 }
             }
             return SleepUntil;
+        }
+
+        internal void UpdateECR(double v)
+        {
+            throw new NotImplementedException();
         }
 
         private async Task ShowBattleResult(string tx, bool surrender)

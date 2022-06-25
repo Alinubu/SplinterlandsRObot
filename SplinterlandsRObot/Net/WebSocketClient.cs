@@ -115,9 +115,38 @@ namespace SplinterlandsRObot.Classes.Net
             {
                 if (json["data"].ToString().Contains("new_rating"))
                 {
-
+                    instance.UpdateRating((int)json["data"]["new_rating"]);
                 }
-                instance.UpdateRating();
+                if (json["data"].ToString().Contains("new_league"))
+                {
+                    instance.UpdateLeague((int)json["data"]["new_league"]);
+                }
+                if (json["data"].ToString().Contains("new_max_league"))
+                {
+                    instance.UpdateMaxLeague((int)json["data"]["new_max_league"]);
+                }
+                if (json["data"].ToString().Contains("additional_season_rshares"))
+                {
+                    instance.UpdateSeasonRewardShares((int)json["data"]["additional_season_rshares"]);
+                }
+                if (json["data"].ToString().Contains("new_collection_power"))
+                {
+                    instance.UpdateCollectionPower((int)json["data"]["new_collection_power"]);
+                }
+            }
+            else if (messageType == "ecr_update")
+            {
+                if (json["data"].ToString().Contains("capture_rate"))
+                {
+                    instance.UpdateECR((double)json["data"]["ecr_update"]);
+                }
+            }
+            else if (messageType == "balance_update")
+            {
+                if (json["data"]["token"].ToString() == "DEC" && json["data"]["type"])
+                {
+                    instance.((double)json["data"]["ecr_update"]);
+                }
             }
 
             if (Enum.TryParse(json["id"].ToString(), out WebsocketMessages state))
