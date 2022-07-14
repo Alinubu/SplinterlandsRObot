@@ -1,6 +1,10 @@
-﻿Version 1.1.4
+﻿Version 1.1.5
 
 Changes:
-    - fixed AvoidQuest bug
-    - fixed a bug for accounts moving from old quest to new focus system
-    - fixed the FP needed shares not showing correctly
+    - Removed API calls from Splinterlands to improve threads stability
+    - Add config file change detection and update configs without restarting the bot
+    - Update configs to be at user level
+    - Auto assets transfer on claim quest
+    - Focus renting is now supported
+    - Renting will now group multiple cards into one transaction
+    - Added support for Modern format

@@ -10,7 +10,8 @@ class Program
     private static readonly object _TaskLock = new();
     private static object _SleepInfoLock = new();
     private static string identifier;
-    static Task Main(string[] args)
+
+    static async Task Main(string[] args)
     {
         CancellationTokenSource cancellationTokenSource = new();
         CancellationToken token = cancellationTokenSource.Token;
@@ -18,10 +19,6 @@ class Program
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Console.Title = "Splinterlands Bot";
-            int[] window = new int[] { Console.BufferHeight, Console.WindowHeight };
-            Console.SetWindowSize(1, 1);
-            Console.SetBufferSize(140, window[0]);
-            Console.SetWindowSize(140, window[1]);
 
             if (Environment.OSVersion.Version.Major < 10)
             {
@@ -49,14 +46,8 @@ class Program
             eArgs.Cancel = true;
             cancellationTokenSource.Cancel();
         };
-
+        
         _ = Task.Run(async () => await StartBot(token)).ConfigureAwait(false);
-
-        if (Settings.USE_RENTAL_BOT)
-            _ = Task.Run(async () => await new RentProcess().StartRentingProcess(token).ConfigureAwait(false));
-
-        if (Settings.SYNC_BOT_STATS && Settings.DO_BATTLE)
-            _ = Task.Run(async () => await new Bot().SyncUserStats(identifier, token).ConfigureAwait(false));
 
         string? command = "";
         while (true)
@@ -81,14 +72,6 @@ class Program
                 {
                     _ = Task.Run(async () => await new HiveActions().ClaimSeasonRewards().ConfigureAwait(false));
                 }
-                else
-                {
-                    string[] setting = command.Split('=');
-                    if (setting.Count() == 2)
-                    {
-                        Settings.ChangeConfig(setting[0], setting[1]);
-                    }
-                }
             }
         }
     }
@@ -104,6 +87,14 @@ class Program
         
         while (!token.IsCancellationRequested)
         {
+            lock (_TaskLock)
+            {
+                if (!InstanceManager.isRentingServiceRunning)
+                    _ = Task.Run(async () => await new RentProcess().StartRentingProcess(token).ConfigureAwait(false));
+                if (!InstanceManager.isStatsSyncRunning)
+                    _ = Task.Run(async () => await new Bot().SyncUserStats(identifier, token).ConfigureAwait(false));
+            }
+
             while (instances.Count < Settings.MAX_THREADS && !token.IsCancellationRequested)
             {
                 try
@@ -114,6 +105,7 @@ class Program
                         {
                             firstRuntrough = false;
                             nextBotInstance = 0;
+                            Logs.OutputStat();
                         }
 
                         while (InstanceManager.BotInstances.All(x => x.CurrentlyActive

@@ -13,8 +13,8 @@
         public DateTime? claim_date { get; set; }
         public int reward_qty { get; set; }
         public string? refresh_trx_id { get; set; }
-        public Rewards? rewards = null;
-        public int chest_tier { get; set; }
+        public object? rewards = null;
+        public int? chest_tier { get; set; }
         public int rshares { get; set; }
         public int earned_chests = 0;
     }

@@ -15,5 +15,6 @@ namespace SplinterlandsRObot.Models.Bot
         public bool replaceStarterCards { get; set; }
         public bool useStarterCards { get; set; }
         public bool prioritizeFocus { get; set; }
+        public string battleMode { get; set; }
     }
 }

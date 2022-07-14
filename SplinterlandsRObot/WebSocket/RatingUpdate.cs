@@ -1,4 +1,4 @@
-﻿namespace SplinterlandsRObot.Models
+﻿namespace SplinterlandsRObot.Models.WebSocket
 {
     public class RatingUpdate
     {
@@ -10,7 +10,8 @@
     {
         public int new_rating { get; set; }
         public int new_league { get; set; }
-        public int new_max_league { get; set; }
-        public int additional_season_rshares { get; set; }
+        public int? new_max_league { get; set; }
+        public int? additional_season_rshares { get; set; }
+        public int? new_collection_power { get; set; }
     }
 }

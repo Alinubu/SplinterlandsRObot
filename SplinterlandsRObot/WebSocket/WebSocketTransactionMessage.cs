@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SplinterlandsRObot.Models.WebSocket
 {
-    public class WebsoketTransactionMessage
+    public class WebSocketTransactionMessage
     {
         public JToken message { get; set; }
         public bool processed { get; set; }

@@ -16,7 +16,8 @@
         public List<int> beta_gold_xp { get; set; }
         public List<List<int>> combine_rates { get; set; }
         public List<List<int>> combine_rates_gold { get; set; }
-        public List<League> leagues { get; set; }
+        public Leagues leagues { get; set; }
+        public Dec dec { get; set; }
         public int transfer_cooldown_blocks { get; set; }
         public DateTime untamed_edition_date { get; set; }
         public List<string> active_auth_ops { get; set; }
@@ -30,7 +31,7 @@
         public double dec_price { get; set; }
         public double sps_price { get; set; }
         public bool maintenance_mode { get; set; }
-        public Season season { get; set; }
+        public Season? season { get; set; }
         public int last_block { get; set; }
         public long timestamp { get; set; }
         public ChainProps chain_props { get; set; }
@@ -94,6 +95,11 @@
         public string description { get; set; }
     }
     
+    public class Leagues
+    {
+        public List<League> modern { get; set; }
+        public List<League> wild { get; set; }    
+    }
     public class League
     {
         public string name { get; set; }
@@ -104,6 +110,40 @@
         public int min_power { get; set; }
         public int season_rating_reset { get; set; }
     }
+
+    public class Dec
+    {
+        public int tokens_per_block { get; set; }
+        public int eth_withdrawal_fee { get; set; }
+        public int gold_burn_bonus_2 { get; set; }
+        public int curve_reduction { get; set; }
+        public double beta_bonus { get; set; }
+        public int curve_constant { get; set; }
+        public int start_block { get; set; }
+        public int reduction_blocks { get; set; }
+        public int reduction_pct { get; set; }
+        public int pool_size_blocks { get; set; }
+        public double ecr_regen_rate { get; set; }
+        public double ecr_reduction_rate { get; set; }
+        public double alpha_bonus { get; set; }
+        public double gold_bonus { get; set; }
+        public double streak_bonus { get; set; }
+        public double streak_bonus_max { get; set; }
+        public List<int> burn_rate { get; set; }
+        public List<int> untamed_burn_rate { get; set; }
+        public int alpha_burn_bonus { get; set; }
+        public int promo_burn_bonus { get; set; }
+        public int gold_burn_bonus { get; set; }
+        public double max_burn_bonus { get; set; }
+        public int orbs_available { get; set; }
+        public int orb_cost { get; set; }
+        public int dice_available { get; set; }
+        public int dice_cost { get; set; }
+        public int mystery_potion_blocks { get; set; }
+        public int pool_cut_pct { get; set; }
+        public string prize_pool_account { get; set; }
+    }
+
     public class LootChests
     {
         public List<QuestLoot> quest { get; set; }

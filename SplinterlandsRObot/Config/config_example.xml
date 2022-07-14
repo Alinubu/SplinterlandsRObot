@@ -1,18 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
   <SleepBetweenBattles>5</SleepBetweenBattles><!--After each battle account will be benched for X minutes-->
-  <ShowBattleResults>true</ShowBattleResults><!--Displays battle results and overview of accounts-->
   <ECR>
 	<Limit>75</Limit><!--Bot will play until user is below the set limit-->
 	<WaitToRecharge>false</WaitToRecharge><!--After the lower limit is reached, bot will wait until accout ECR is at the set value-->
 	<RechargeLimit>99</RechargeLimit><!--ECR value to recharge to-->
   </ECR>
+  <BattleMode>modern</BattleMode><!--Ranked battle mode. Options: modern or wild-->
   <League>
 	<AdvanceToNext>true</AdvanceToNext><!--Bot will advance user to a higher league (Bronze->Silver, Silver->Gold)-->
 	<AdvanceRatingThreshold>100</AdvanceRatingThreshold><!--Set a threshold for the rating to be above the league limit before the bot will advance to the next one-->
+	<MaxLeague>0</MaxLeague>
   </League>
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
+	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
+	<AvoidQuests>
+	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
+	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
+	</AvoidQuests>
 	<FocusRate>50</FocusRate><!--Percetange of the probability the bot will try to play a Focused splinter each match (Range[0-100])-->
 	<SplinterFocusOverride><!--You can set a Focus override value for each of the Splinters (Range[0-100], -1 for disabled)-->
 	  <Fire>-1</Fire>
@@ -22,12 +28,6 @@
 	  <Death>-1</Death>
 	  <Dragon>-1</Dragon>
 	</SplinterFocusOverride>
-	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
-	<ShowQuestRewards>true</ShowQuestRewards><!--After claiming the quest it will display a table with the rewards in the console-->
-	<AvoidQuests>
-	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
-	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
-	</AvoidQuests>
   </Quests>
   <Cards>
 	<PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
@@ -35,23 +35,36 @@
 	<UseStarterCards>true</UseStarterCards>
   </Cards>
   <ProFeatures><!--This features are not available by default, dm me for details-->
+	<UsePrivateAPi>false</UsePrivateAPi><!--No Limit for API Calls-->
 	<Airdrops>
 	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
+	  <CheckForAirdropEvery>5</CheckForAirdropEvery><!--(Hours)-->
 	</Airdrops>
 	<RentalBot>
 	  <UseRentalBot>false</UseRentalBot><!--Enables the renting features, all settings below will be ignored if this is disabled-->
+	  <PowerLimit>0</PowerLimit>
 	  <BattleWhileRenting>false</BattleWhileRenting><!--Accounts will continue to battle even if CP is below PowerLimit-->
+	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
+	  <MaxTriesPerUser>20</MaxTriesPerUser><!--Number of times it should try to rent the cards for one user before moving to the next one-->
 	  <RentSpecificCards>false</RentSpecificCards><!--Will prioritize renting the cards setup in the rentConfig set for each user-->
+	  <RentFile>rentcards_example.xml</RentFile>
+	  <RentForFocus>false</RentForFocus><!--Rents specific cards for a focus, the list of cards must be specified for each splinter-->
+		<FireRentFile></FireRentFile>
+		<WaterRentFile></WaterRentFile>
+		<EarthRentFile></EarthRentFile>
+		<LifeRentFile></LifeRentFile>
+		<DeathRentFile></DeathRentFile>
+		<DragonRentFile></DragonRentFile>
 	  <RentForPower>false</RentForPower><!--Will rent any card that matches de configured parameters-->
 	  <RentGoldOnly>false</RentGoldOnly><!--When renting for Power, if enabled, bot will only check the gold cards-->
 	  <CPperDecLimit>250</CPperDecLimit><!--Set the minimum CP/DEC for renting-->
-	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
 	  <MinimumPowerToRent>100</MinimumPowerToRent><!--Used together with RentForPower, will ignore any card with CP lower than this setting-->
-	  <RenewRentals>true</RenewRentals><!--Rentals are check and renewed if end date is in less than X hours (see next option)-->
+	  <RenewRentals>false</RenewRentals><!--Rentals are check and renewed if end date is in less than X hours (see next option)-->
 	  <RenewHoursBeforeEnding>2</RenewHoursBeforeEnding><!--Number of hour before a rental will end-->
 	</RentalBot>
 	<TransferBot>
 	  <MainAccount>YourMainUser</MainAccount><!--The main account you want the assets to be transfered to-->
+	  <AutoTransferAfterFocusClaim>false</AutoTransferAfterFocusClaim><!--The assets transfer will be triggered for a user after claiming the focus rewards-->
 	  <TransferCards>false</TransferCards><!--Will transfer all user Cards, if you want some cards to not be transfered, you need to lock them-->
 	  <TransferDec>false</TransferDec><!--Will transfer DEC currency to main account-->
 	  <KeepDecAmount>15</KeepDecAmount><!--The amount of DEC you want to keed for one account-->
@@ -59,7 +72,6 @@
 	  <TransferSps>false</TransferSps><!--Will transfer SPS currency to main account-->
 	  <TransferPacks>false</TransferPacks><!--Will transfer Packs to main account-->
 	</TransferBot>
-	<UsePrivateAPi>false</UsePrivateAPi><!--No Limit for API Calls-->
 	<SyncBotStats>false</SyncBotStats><!--Sync the user statistics with the server, you can check them on the bot website using the generated passkey-->
   </ProFeatures>
 </config>

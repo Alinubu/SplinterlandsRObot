@@ -31,12 +31,15 @@ namespace SplinterlandsRObot.Hive
                 throw new Exception("Invalid username or posting key in users.xml");
             }
             UserDetails userDetails = JsonConvert.DeserializeObject<UserDetails>(response);
+            Logs.LogMessage($"{username}: Login OK", Logs.LOG_SUCCESS);
+            Thread.Sleep(650);
             return userDetails;
         }
-        public string StartNewMatch(User user)
+        public string StartNewMatch(User user, string battleMode)
         {
+            string matchType = battleMode == "modern" ? "Modern Ranked" : "Wild Ranked";
             string n = Helpers.RandomString(10);
-            string json = "{\"match_type\":\"Ranked\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
+            string json = "{\"match_type\":\"" + matchType + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_find_match", json);
 
@@ -97,7 +100,7 @@ namespace SplinterlandsRObot.Hive
                 COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_submit_team", json);
 
                 Logs.LogMessage($"{user.Username}: Submitting team...");
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
+                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API);
                 string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
@@ -146,7 +149,7 @@ namespace SplinterlandsRObot.Hive
                 COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_team_reveal", json);
 
                 Logs.LogMessage($"{user.Username}: Revealing team...");
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
+                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API, Referer: "https://splinterlands.com/");
                 string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
@@ -170,7 +173,7 @@ namespace SplinterlandsRObot.Hive
                 string json = "{\"battle_queue_id\":\"" + battleId + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
                 Logs.LogMessage($"{user.Username}: Surrendering battle...");
                 COperations.custom_json custom_json = CreateCustomJson(user, false, true, "sm_surrender", json);
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_json }, new string[] { user.PassCodes.PostingKey });
+                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_json }, new string[] { user.Keys.PostingKey });
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API, Referer: "https://splinterlands.com/");
                 string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
@@ -211,7 +214,7 @@ namespace SplinterlandsRObot.Hive
                     var sid = "sid_" + Helpers.RandomString(20);
                     var ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
                     var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(user.Username + ts));
-                    var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(user.PassCodes.PostingKey));
+                    var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(user.Keys.PostingKey));
                     var signature = Hex.ToString(sig);
                     var response = await sp_api.GetSeasonDetails(user.Username, bid, sid, signature, ts);
 
@@ -235,8 +238,8 @@ namespace SplinterlandsRObot.Hive
 
                             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_claim_reward", json);
 
-                            CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
-                            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
+                            CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
+                            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
                             
                             await Task.Delay(15000);
                             var rewardsRaw = await sp_api.GetTransactionDetails(tx);
@@ -278,14 +281,14 @@ namespace SplinterlandsRObot.Hive
             return postData;
         }
 
-        internal string AdvanceLeague(User user)
+        internal string AdvanceLeague(User user, string format)
         {
             string n = Helpers.RandomString(10);
-            string json = "{\"notify\":\"false\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
+            string json = "{\"notify\":\"false\"" + format == "modern" ? ",\"format\":\"modern\"" : "" + ",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_advance_league", json);
 
-            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
+            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
             return tx;
         }
 
@@ -300,21 +303,21 @@ namespace SplinterlandsRObot.Hive
             return tx;
         }
 
-        internal bool NewQuest(User user)
+        internal string NewQuest(User user)
         {
             string n = Helpers.RandomString(10);
             string json = "{\"type\":\"daily\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_refresh_quest", json);
 
-            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.PassCodes.PostingKey });
+            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
             if (tx != null)
-                return true;
+                return tx;
 
-            return false;
+            return null;
         }
 
-        internal bool StartFocus(User user)
+        internal string StartFocus(User user)
         {
             string n = Helpers.RandomString(10);
             string json = "{\"type\":\"daily\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
@@ -323,9 +326,9 @@ namespace SplinterlandsRObot.Hive
 
             string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
             if (tx != null)
-                return true;
+                return tx;
 
-            return false;
+            return null;
         }
     }
 }

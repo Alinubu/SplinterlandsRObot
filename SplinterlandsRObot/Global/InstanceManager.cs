@@ -15,6 +15,7 @@ namespace SplinterlandsRObot
         public static HttpClient HttpClient = new();
         public static CookieContainer CookieContainer = new();
         public static bool isRentingServiceRunning = false;
+        public static bool isStatsSyncRunning = false;
         public static void CreateUsersInstance()
         {
             userList = new Users().GetUsers();

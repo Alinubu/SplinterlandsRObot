@@ -16,9 +16,9 @@ namespace SplinterlandsRObot
         public static void LoadSettings()
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "config.xml"));
-            XmlNode rootNode = doc.SelectSingleNode("config");
-            DO_BATTLE = Convert.ToBoolean(Helpers.ReadNode(doc.SelectSingleNode("config"), "DoBattle", false, "true"));
+            doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "settings.xml"));
+            XmlNode rootNode = doc.SelectSingleNode("settings");
+            DO_BATTLE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "DoBattle", false, "true"));
             MAX_THREADS = Convert.ToInt32(Helpers.ReadNode(rootNode, "MaxThreads", false, "1"));
             HOLD_CACHE_FOR = Convert.ToInt32(Helpers.ReadNode(rootNode, "HoldCacheFor", false, "30"));
             DEBUG_MODE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "DebugMode", false, "false"));

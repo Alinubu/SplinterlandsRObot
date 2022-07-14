@@ -4,6 +4,8 @@ using Websocket.Client;
 using Websocket.Client.Models;
 using SplinterlandsRObot.Global;
 using SplinterlandsRObot.Game;
+using Newtonsoft.Json;
+using SplinterlandsRObot.Models.Account;
 
 namespace SplinterlandsRObot.Classes.Net
 {
@@ -13,14 +15,14 @@ namespace SplinterlandsRObot.Classes.Net
         private BotInstance instance { get; set; }
         private string username { get; set; }
         private string accessToken { get; set; }
-        public List<WebsoketTransactionMessage> transactions { get; set; }
+        public List<WebSocketTransactionMessage> transactions { get; set; }
 
         public WebSocket(string _username, string _accessToken, BotInstance _instance)
         {
             instance = _instance;
             username = _username;
             accessToken = _accessToken;
-            transactions = new List<WebsoketTransactionMessage();
+            transactions = new List<WebSocketTransactionMessage>();
             client = new WebsocketClient(new Uri(Constants.SPLINTERLANDS_WEBSOCKET_URL));
             client.ReconnectTimeout = null;
             client.MessageReceived.Subscribe(OnMessageReceived);
@@ -32,7 +34,7 @@ namespace SplinterlandsRObot.Classes.Net
         {
             await client.Start();
             WebsocketAuthenticate();
-            //_ = WebsocketPingLoop().ConfigureAwait(false);
+            _ = WebsocketPing().ConfigureAwait(false);
         }
         private void WebsocketAuthenticate()
         {
@@ -44,12 +46,7 @@ namespace SplinterlandsRObot.Classes.Net
         {
             client.Send(message);
         }
-        public void WebsocketPing()
-        {
-            Logs.LogMessage($"{username}: ping", supress: true);
-            client.Send("{\"type\":\"ping\"}");
-        }
-        private async Task WebsocketPingLoop()
+        public async Task WebsocketPing()
         {
             while (client.IsStarted)
             {
@@ -64,33 +61,15 @@ namespace SplinterlandsRObot.Classes.Net
                         }
                     }
 
-                    WebsocketPing();
+                    client.Send("{\"type\":\"ping\"}");
+                    Logs.LogMessage($"{username}: ping", supress: true);
                 }
                 catch (Exception ex)
                 {
-                    Logs.LogMessage($"{username}: Error at WebSocket ping { ex }", supress: true);
-                }
-                finally
-                {
+                    Logs.LogMessage($"{username}: Error pinging WebSocket { ex }", supress: true);
                     await WebsocketStop("Ping Error");
                 }
             }
-        }
-        public async Task<bool> WaitForStateChange(WebsocketMessages state, int secondsToWait = 0)
-        {
-            int maxI = secondsToWait > 0 ? secondsToWait : 1;
-            for (int i = 0; i < maxI; i++)
-            {
-                if (secondsToWait > 0)
-                {
-                    await Task.Delay(1000);
-                }
-                if (states.ContainsKey(state))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
         public async Task WebsocketStop(string stopDescription)
         {
@@ -108,27 +87,67 @@ namespace SplinterlandsRObot.Classes.Net
                 return;
             }
             JToken json = JToken.Parse(message.Text);
+            
 
             string messageType = json["id"].ToString();
 
-            if (messageType == "rating_update")
+            if (messageType == "transaction_complete")
             {
-                if (json["data"].ToString().Contains("new_rating"))
+                transactions.Add(new WebSocketTransactionMessage()
                 {
-                    instance.UpdateRating((int)json["data"]["new_rating"]);
-                }
-                if (json["data"].ToString().Contains("new_league"))
+                    message = json,
+                    processed = false
+                });
+            }
+            else if (messageType == "match_found")
+            {
+                instance.UpdateMatchFound(true, json["data"]);
+            }
+            else if (messageType == "opponent_submit_team")
+            {
+                instance.UpdateOpponentSubmitTeam(true);
+            }
+            else if (messageType == "rating_update")
+            {
+                if (json["data"].ToString().Contains("modern"))
                 {
-                    instance.UpdateLeague((int)json["data"]["new_league"]);
+                    if (json["data"]["modern"].ToString().Contains("new_rating"))
+                    {
+                        instance.UpdateModernRating((int)json["data"]["modern"]["new_rating"]);
+                    }
+                    if (json["data"]["modern"].ToString().Contains("new_league"))
+                    {
+                        instance.UpdateModernLeague((int)json["data"]["modern"]["new_league"]);
+                    }
+                    if (json["data"]["modern"].ToString().Contains("new_max_league"))
+                    {
+                        instance.UpdateModernMaxLeague((int)json["data"]["modern"]["new_max_league"]);
+                    }
+                    //if (json["data"]["modern"].ToString().Contains("additional_season_rshares"))
+                    //{
+                    //    instance.UpdateModernSeasonRewardShares((int)json["data"]["modern"]["additional_season_rshares"]);
+                    //}
                 }
-                if (json["data"].ToString().Contains("new_max_league"))
+                else if (json["data"].ToString().Contains("wild"))
                 {
-                    instance.UpdateMaxLeague((int)json["data"]["new_max_league"]);
+                    if (json["data"]["wild"].ToString().Contains("new_rating"))
+                    {
+                        instance.UpdateRating((int)json["data"]["wild"]["new_rating"]);
+                    }
+                    if (json["data"]["wild"].ToString().Contains("new_league"))
+                    {
+                        instance.UpdateLeague((int)json["data"]["wild"]["new_league"]);
+                    }
+                    if (json["data"]["wild"].ToString().Contains("new_max_league"))
+                    {
+                        instance.UpdateMaxLeague((int)json["data"]["wild"]["new_max_league"]);
+                    }
+                    //if (json["data"]["wild"].ToString().Contains("additional_season_rshares"))
+                    //{
+                    //    instance.UpdateSeasonRewardShares((int)json["data"]["wild"]["additional_season_rshares"]);
+                    //}
                 }
-                if (json["data"].ToString().Contains("additional_season_rshares"))
-                {
-                    instance.UpdateSeasonRewardShares((int)json["data"]["additional_season_rshares"]);
-                }
+                
                 if (json["data"].ToString().Contains("new_collection_power"))
                 {
                     instance.UpdateCollectionPower((int)json["data"]["new_collection_power"]);
@@ -138,44 +157,80 @@ namespace SplinterlandsRObot.Classes.Net
             {
                 if (json["data"].ToString().Contains("capture_rate"))
                 {
-                    instance.UpdateECR((double)json["data"]["ecr_update"]);
+
+                    instance.UpdateECR(
+                        new Balance()
+                        {
+                            balance = (double)json["data"]["capture_rate"],
+                            token = "ECR",
+                            last_reward_block = (int)json["data"]["last_reward_block"],
+                            last_reward_time = (DateTime)json["data"]["last_reward_time"]
+                        });
                 }
             }
             else if (messageType == "balance_update")
             {
-                if (json["data"]["token"].ToString() == "DEC" && json["data"]["type"])
+                if (json["data"]["token"].ToString() == "DEC")
                 {
-                    instance.((double)json["data"]["ecr_update"]);
+                    if (json["data"]["type"].ToString() == "dec_reward")
+                        instance.UpdateLastReward((double)json["data"]["amount"]);
+                    instance.UpdateDecBalance((double)json["data"]["balance_end"]);
+                }
+                else if (json["data"]["token"].ToString() == "SPS")
+                {
+                    instance.UpdateSpsBalance((double)json["data"]["balance_end"]);
+                }
+                else if (json["data"]["token"].ToString() == "GOLD")
+                {
+                    instance.UpdateGoldPotionsBalance((double)json["data"]["balance_end"]);
+                }
+                else if (json["data"]["token"].ToString() == "LEGENDARY")
+                {
+                    instance.UpdateLegendaryPotionsBalance((double)json["data"]["balance_end"]);
+                }
+                else if (json["data"]["token"].ToString() == "CHAOS")
+                {
+                    instance.UpdatePacksBalance((double)json["data"]["balance_end"]);
+                }
+                else if (json["data"]["token"].ToString() == "CREDITS")
+                {
+                    instance.UpdateCreditsBalance((double)json["data"]["balance_end"]);
+                }
+                else if (json["data"]["token"].ToString() == "SPSP")
+                {
+                    instance.UpdateStakedSpsBalance((double)json["data"]["balance_end"]);
                 }
             }
-
-            if (Enum.TryParse(json["id"].ToString(), out WebsocketMessages state))
+            else if (messageType == "quest_progress")
             {
-                Thread.Sleep(1000);
-                if (states.ContainsKey(state))
-                {
-                    states[state] = json["data"];
-                }
-                else
-                {
-                    states.Add(state, json["data"]);
-                }
+                instance.UpdateFocusInfo(
+                    (string)json["data"]["id"],
+                    (string)json["data"]["player"],
+                    (DateTime)json["data"]["created_date"],
+                    (int)json["data"]["created_block"],
+                    (string)json["data"]["name"],
+                    (int)json["data"]["total_items"],
+                    (int)json["data"]["completed_items"],
+                    (string?)json["data"]["claim_trx_id"],
+                    (DateTime?)json["data"]["claim_date"],
+                    (int)json["data"]["reward_qty"],
+                    (string?)json["data"]["refresh_trx_id"],
+                    (int)json["data"]["chest_tier"],
+                    (int)json["data"]["rshares"]
+                    );
             }
-            else if (json["data"]["trx_info"] != null
-                && !(bool)json["data"]["trx_info"]["success"])
+            else if (messageType == "battle_result")
             {
-                Logs.LogMessage($"{username}: Transaction error: " + message.Text, Logs.LOG_ALERT);
+                instance.UpdateBattleResults((int)json["data"]["status"], json["data"]["winner"].ToString());
             }
-            else if (message.Text.Contains("Site Maintenance Warning"))
+            else if (messageType == "received_gifts")
             {
-                Logs.LogMessage("Site Maintenance Warning", Logs.LOG_WARNING);
+                //ToDo
             }
             else
             {
-                Logs.LogMessage($"{username}: UNKNOWN Message received: {message.Text}", Logs.LOG_ALERT);
+                Logs.LogMessage($"{username}: UNKNOWN Message received: {message.Text}", Logs.LOG_ALERT, true);
             }
-
-            Logs.LogMessage($"{username}: Message received: {message.Text}", supress: true);
         }
         private void OnReconnectionHappened(ReconnectionInfo info)
         {

@@ -8,21 +8,23 @@ using SplinterlandsRObot.Extensions;
 using SplinterlandsRObot.Global;
 using Newtonsoft.Json;
 using SplinterlandsRObot.Models.Bot;
+using SplinterlandsRObot.Models.WebSocket;
 
 namespace SplinterlandsRObot.Game
 {
     public class BotInstance
     {
         #region BotInstance Constructor
-        private object _activeLock = new();
+        private readonly object _activeLock = new();
         public bool CurrentlyActive { get; set; }
         private int InstanceIndex { get; set; }
-        private User UserData { get; set; }
-        private Config UserConfig { get; set; }
-        private UserDetails UserDetails = new();
+        public User UserData { get; set; }
+        public Config UserConfig { get; set; }
+        public UserDetails UserDetails = new();
         private UserBalance UserBalance = new();
         private CardsCollection UserCards = new();
         private Focus focus = new();
+        private Season season = new Season();
         private BattleState BattleState = new();
         private HiveActions HiveActions = new();
         private Splinterlands SplinterlandsAPI = new();
@@ -33,15 +35,17 @@ namespace SplinterlandsRObot.Game
 
         private DateTime LastLogin = DateTime.MinValue;
         private DateTime LastAirdrop = DateTime.MinValue;
-        private double ECR = 0;
         private bool waitForECR = false;
         private bool focusCompleted = false;
-        private string focusSplinter = "";
+        public string focusSplinter = "";
         private string focusProgress = "";
         private string lastRatingUpdate = "0";
+        private string lastDecUpdate = "0";
+        private string lastRsharesUpdate = "0";
         private bool focusRenewed = false;
         private DateTime SleepUntil = DateTime.MinValue;
         private bool refreshCards = true;
+        private bool reloadUser = false;
         private bool prioritizeFocus = false;
         JToken matchDetails = null;
 
@@ -50,7 +54,6 @@ namespace SplinterlandsRObot.Game
             UserData = user;
             InstanceIndex = instanceIndex;
             UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey);
-            ECR = ComputeECR(UserDetails.balances);
             UserBalance = new UserBalance()
             {
                 Credits = UserDetails.balances.Where(x => x.token == "CREDITS").Any() ? UserDetails.balances.Where(x => x.token == "CREDITS").First().balance : 0,
@@ -62,9 +65,11 @@ namespace SplinterlandsRObot.Game
                 Voucher = UserDetails.balances.Where(x => x.token == "VOUCHER").Any() ? UserDetails.balances.Where(x => x.token == "VOUCHER").First().balance : 0,
                 SPS = UserDetails.balances.Where(x => x.token == "SPS").Any() ? UserDetails.balances.Where(x => x.token == "SPS").First().balance : 0,
                 SPSP = UserDetails.balances.Where(x => x.token == "SPSP").Any() ? UserDetails.balances.Where(x => x.token == "SPSP").First().balance : 0,
-                ECR = ECR
+                ECR = 0
             };
+            UserBalance.UpdateECR(UserDetails.balances);
             LastLogin = DateTime.Now;
+            UserConfig = new Config(UserData.ConfigFile);
             InstanceManager.UsersStatistics.Add(new UserStats()
             {
                 Account = UserData.Username,
@@ -75,42 +80,18 @@ namespace SplinterlandsRObot.Game
                 Losses = 0,
                 MatchRewards = 0,
                 TotalRewards = 0,
-                Rating = UserDetails.rating,
+                Rating = UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating,
                 RatingChange = "",
-                League = SplinterlandsData.splinterlandsSettings.leagues[UserDetails.league].name,
+                League = UserConfig.BattleMode == "modern" ? 
+                                    SplinterlandsData.splinterlandsSettings.leagues.modern[UserDetails.league].name
+                                    : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name,
                 CollectionPower = UserDetails.collection_power,
-                Focus = "",
+                Quest = "",
                 HoursUntilNextQuest = "N/A",
                 NextMatchIn = SleepUntil,
                 ErrorMessage = ""
             });
-            
             WebSocket = new WebSocket(UserData.Username,UserDetails.token, this);
-        }
-
-        internal void UpdateLeague(int v)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal void UpdateMaxLeague(int v)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal void UpdateSeasonRewardShares(int v)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal void UpdateRating(int v)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal void UpdateCollectionPower(int v)
-        {
-            throw new NotImplementedException();
         }
         #endregion
 
@@ -136,18 +117,30 @@ namespace SplinterlandsRObot.Game
 
                 if (InstanceManager.RentingQueue.ContainsKey(UserData.Username) && !UserConfig.BattleWhileRenting)
                 {
-                    SleepUntil = DateTime.Now.AddMinutes(5);
+                    SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                     return SleepUntil;
                 }
 
                 if (!WebSocket.client.IsStarted)
                 {
                     await WebSocket.WebsocketStart();
-                    WebSocket.states.Clear();
+                    WebSocket.transactions.RemoveAll(transaction => transaction.processed == true);
                 }
                 
                 if (refreshCards)
+                {
                     UserCards = await SplinterlandsAPI.GetUserCardsCollection(UserData.Username, UserDetails.token);
+                    refreshCards = false;
+                }
+
+                if (reloadUser)
+                {
+                    UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey);
+                    reloadUser = false;
+                }
+
+                UserBalance.UpdateECR(UserDetails.balances);
+
                 if (UserConfig.ClaimSPS && (DateTime.Now - LastAirdrop).TotalHours > UserConfig.CheckForAirdropEvery)
                     await new CollectSPS().ClaimSPS(UserData, UserDetails.token);
 
@@ -175,11 +168,15 @@ namespace SplinterlandsRObot.Game
 
                 if (!Settings.DO_BATTLE)
                 {
-                    SleepUntil = DateTime.Now.AddMinutes(5);
+                    SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                     return SleepUntil;
                 }
 
-                if (UserConfig.LeagueAdvance) await AdvanceLeague();
+                if (UserConfig.LeagueAdvance) await AdvanceLeague();//Add ranked mode calculation
+
+                //UserDetails.current_season_player.earned_chests = season.CalculateEarnedChests((int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
+                //InstanceManager.UsersStatistics[botInstance].Season = season.GetSeasonProgress((int)UserDetails.current_season_player.earned_chests, (int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
+
 
                 if (UserConfig.FocusEnabled)
                     Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
@@ -192,29 +189,46 @@ namespace SplinterlandsRObot.Game
                         if (UserDetails.quest.completed_items > 0 && UserDetails.quest.completed_items == UserDetails.quest.total_items)
                         {
                             Logs.LogMessage($"{UserData.Username}: Old quest rewards found, trying to claim before requesting a new Focus", Logs.LOG_ALERT);
-                            focus.ClaimQuestReward(UserDetails.quest, UserData);
-                            //ADD SOCKET CHECK FOR CLAIM TX
+                            string qtx = await focus.ClaimQuestReward(UserDetails.quest, UserData);
+                            if (qtx != null)
+                            {
+                                JToken response = null;
+                                bool success = false;
+                                (success, response) = await WaitForTransactionSuccess(qtx, 30);
+                                if (success)
+                                    OutputQuestResults(response.ToString());
+                            }
                         }
                         Logs.LogMessage($"{UserData.Username}: Cannot find Focus name. Maybe old quest active, requesting a new Focus", Logs.LOG_ALERT);
-                        if (new HiveActions().StartFocus(UserData))
+                        string ftx = new HiveActions().StartFocus(UserData);
+                        if (ftx != null)
                         {
-                            //ADD SOCKET CHECK FOR NEW FOCUS TX
-
+                            JToken response = null;
+                            bool success = false;
+                            (success, response) = await WaitForTransactionSuccess(ftx, 30);
+                            if (success)
+                                UserDetails.quest = JsonConvert.DeserializeObject<Quest>(response["data"]["trx_info"]["result"].ToString());
                         }
                         
                         focusSplinter = focus.GetFocusSplinter(UserDetails.quest.name);
                         if (focusSplinter == "THISWILLBEREMOVEDATSOMEPOINT")
                         {
                             Logs.LogMessage($"{UserData.Username}: Cannot find Focus name. Maybe old quest ongoing, requesting a new Focus a different way", Logs.LOG_ALERT);
-                            if (focus.RequestNewFocus(UserData))
+
+                            string nftx = focus.RequestNewFocus(UserData);
+                            if (nftx != null)
                             {
-                                //ADD SOCKET CHECK FOR NEW FOCUS TX
+                                JToken response = null;
+                                bool success = false;
+                                (success, response) = await WaitForTransactionSuccess(nftx, 30);
+                                if (success)
+                                    UserDetails.quest = JsonConvert.DeserializeObject<Quest>(response["data"]["trx_info"]["result"].ToString());
                                 focusSplinter = focus.GetFocusSplinter(UserDetails.quest.name);
                             }
                         }
                     }
 
-                    UserDetails.quest.earned_chests = focus.CalculateEarnedChests((int)UserDetails.quest.chest_tier, UserDetails.quest.rshares);
+                    UserDetails.quest.earned_chests = focus.CalculateEarnedChests((int)UserDetails.quest.chest_tier, (int)UserDetails.quest.rshares);
                     focusRenewed = UserDetails.quest.refresh_trx_id != null ? true : false;
 
                     if (UserConfig.ClaimFocusChests)
@@ -222,41 +236,65 @@ namespace SplinterlandsRObot.Game
                         if ((24 - (DateTime.Now - UserDetails.quest.created_date.ToLocalTime()).TotalHours) < 0 && UserDetails.quest.claim_trx_id == null && UserDetails.quest.earned_chests > 0)
                         {
                             Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
-                            if (await focus.ClaimQuestReward(UserDetails.quest, UserData))
+                            string qtx = await focus.ClaimQuestReward(UserDetails.quest, UserData);
+                            if (qtx != null)
                             {
-                                //ADD SOCKET CHECK FOR CLAIM TX
+                                JToken response = null;
+                                bool success = false;
+                                (success, response) = await WaitForTransactionSuccess(qtx, 30);
+                                if (success)
+                                {
+                                    UserDetails.quest.claim_trx_id = response["data"]["trx_info"]["id"].ToString();
+                                    OutputQuestResults(response["data"].ToString());
+                                    if (UserConfig.AutoTransferAfterFocusClaim)
+                                        _ = Task.Run(async () => await new TransferAssets().TransferAssetsAsync(UserData).ConfigureAwait(false));
+                                }
+                                    
                             }
                         }
                     }
 
-                    if (await focus.CheckForNewFocus(UserDetails.quest, UserData))
+                    string cftx = await focus.CheckForNewFocus(UserDetails.quest, UserData);
+                    if (cftx != null)
                     {
-                        focusRenewed = false;
-                        //ADD SOCKET CHECK FOR NEW FOCUS TX
+                        JToken response = null;
+                        bool success = false;
+                        (success, response) = await WaitForTransactionSuccess(cftx, 30);
+                        if (success)
+                        {
+                            focusRenewed = false;
+                            UserDetails.quest = JsonConvert.DeserializeObject<Quest>(response["data"]["trx_info"]["result"].ToString());
+                        }
+                            
                     }
 
                     focusProgress = focus.GetQuestProgress(UserDetails.quest.earned_chests, (int)UserDetails.quest.chest_tier, UserDetails.quest.rshares);
 
                     if (UserConfig.FocusEnabled)
-                        prioritizeFocus = focus.IsFocusPrio(random, focusSplinter);
+                        prioritizeFocus = focus.IsFocusPrio(random, focusSplinter, UserConfig);
 
                     if (UserConfig.FocusEnabled && UserConfig.AvoidFocus && !focusRenewed)
                     {
                         if(UserConfig.FocusBlacklist.Length > 0 && UserConfig.FocusBlacklist.Any(x => x.Contains(focusSplinter)))
                         {
                             Logs.LogMessage($"{UserData.Username}: Daily Focus blacklisted, requesting a new one...", Logs.LOG_ALERT);
-                            if (focus.RequestNewFocus(UserDetails.quest, UserData))
+                            string nftx = focus.RequestNewFocus(UserData);
+                            if (nftx != null)
                             {
-                                Logs.LogMessage($"{UserData.Username}: New Daily Focus received", Logs.LOG_SUCCESS);
-                                focusRenewed = true;
-
-                                //ADD CHECK FOR NEW FOCUS TX
-                                
-                                focusSplinter = focus.GetFocusSplinter(UserDetails.quest.name);
-                            }
-                            else
-                            {
-                                Logs.LogMessage($"{UserData.Username}: Error requesting new Daily Focus", Logs.LOG_WARNING);
+                                JToken response = null;
+                                bool success = false;
+                                (success, response) = await WaitForTransactionSuccess(nftx, 30);
+                                if (success)
+                                {
+                                    Logs.LogMessage($"{UserData.Username}: New Daily Focus received", Logs.LOG_SUCCESS);
+                                    focusRenewed = true;
+                                    UserDetails.quest = JsonConvert.DeserializeObject<Quest>(response["data"]["trx_info"]["result"].ToString());
+                                    focusSplinter = focus.GetFocusSplinter(UserDetails.quest.name);
+                                }
+                                else
+                                {
+                                    Logs.LogMessage($"{UserData.Username}: Error requesting new Daily Focus", Logs.LOG_WARNING);
+                                }
                             }
                         }
                     }
@@ -264,8 +302,11 @@ namespace SplinterlandsRObot.Game
                     if (UserConfig.FocusEnabled)
                         Logs.LogMessage($"{UserData.Username}: Current Focus: {focusSplinter}", Logs.LOG_ALERT, true);
 
-                    InstanceManager.UsersStatistics[botInstance].Focus = $"{focusSplinter}[{focusProgress}]";
+                    InstanceManager.UsersStatistics[botInstance].Quest = $"{focusSplinter}[{focusProgress}]";
                     InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - UserDetails.quest.created_date.ToLocalTime()).TotalHours).ToString();
+                    InstanceManager.UsersStatistics[botInstance].Balance = UserBalance;
+                    InstanceManager.UsersStatistics[botInstance].CollectionPower = UserDetails.collection_power;
+                    
                 }
                 else
                 {
@@ -279,14 +320,14 @@ namespace SplinterlandsRObot.Game
                     if ((UserBalance.ECR) < UserConfig.EcrLimit)
                     {
                         Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(UserBalance.ECR)}%/{UserConfig.EcrLimit}%] ", Logs.LOG_ALERT);
-                        SleepUntil = DateTime.Now.AddMinutes(5);
-                        await Task.Delay(1500);
+                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
+                        //await Task.Delay(1500); WHYYY?????
                         if (UserConfig.WaitToRechargeEcr)
                         {
                             waitForECR = true;
                             Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {UserConfig.EcrRechargeLimit}%", Logs.LOG_ALERT);
                         }
-                        SleepUntil = DateTime.Now.AddMinutes(5);
+                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                         return SleepUntil;
                     }
                 }
@@ -295,7 +336,7 @@ namespace SplinterlandsRObot.Game
                     if ((UserBalance.ECR) < UserConfig.EcrRechargeLimit)
                     {
                         Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%. Moving to next account", Logs.LOG_ALERT);
-                        SleepUntil = DateTime.Now.AddMinutes(10);
+                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                         return SleepUntil;
                     }
                     else
@@ -319,10 +360,10 @@ namespace SplinterlandsRObot.Game
                 BattleState.Reset();
                 //Starting a new match
                 bool canSubmitTeam = true;
-                
+                matchDetails = null;
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                string tx = HiveActions.StartNewMatch(UserData); //maybe remve tx
+                string tx = HiveActions.StartNewMatch(UserData, UserConfig.BattleMode); //maybe remove tx
 
                 
 
@@ -355,7 +396,7 @@ namespace SplinterlandsRObot.Game
                 }
 
                 JToken team = new JObject();
-                matchDetails = null;
+                
                 bool surrender = false;
                 SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
 
@@ -369,7 +410,9 @@ namespace SplinterlandsRObot.Game
                             SleepUntil = DateTime.Now.AddMinutes(30);
                             return SleepUntil;
                         }
-
+                    }
+                    else
+                    {
                         Logs.LogMessage($"{UserData.Username}: New match found - Manacap: {matchDetails["mana_cap"]}; Ruleset: {matchDetails["ruleset"]}; Inactive splinters: {matchDetails["inactive"]}", Logs.LOG_ALERT);
                     }
                     
@@ -454,13 +497,8 @@ namespace SplinterlandsRObot.Game
                         Logs.LogMessage($"{UserData.Username}: Error surrendering match.", Logs.LOG_WARNING);
                 }
 
-                Logs.LogMessage($"{UserData.Username}: Battle finished!");
-
-                if (await BattleState.WaitForResultsReceived(210))
-                {
-                    InstanceManager.UsersStatistics[botInstance].Balance.ECR = Math.Round(UserBalance.ECR != null ? (double)UserBalance.ECR : 0, 2);
-                }
-                else { Logs.LogMessage($"{UserData.Username}: Error fetching battle result", Logs.LOG_WARNING); }
+                if (!await BattleState.WaitForResultsReceived(210))
+                    Logs.LogMessage($"{UserData.Username}: Error fetching battle result", Logs.LOG_WARNING);
                 
             }
             catch (Exception ex)
@@ -476,120 +514,208 @@ namespace SplinterlandsRObot.Game
             }
             return SleepUntil;
         }
-
-        internal void UpdateECR(double v)
+        #region Update
+        internal void UpdateMatchFound(bool s, JToken details)
         {
-            throw new NotImplementedException();
+            BattleState.BattleStarted = s;
+            matchDetails = details;
+        }
+        internal void UpdateOpponentSubmitTeam(bool s)
+        {
+            BattleState.OpponentTeamSubmitted = s;
+        }
+        internal void UpdateLeague(int league)
+        {
+            UserDetails.league = league;
         }
 
-        private async Task ShowBattleResult(string tx, bool surrender)
+        internal void UpdateMaxLeague(int maxLeague)
         {
+            UserDetails.season_max_league = maxLeague;
+        }
+
+        //internal void UpdateSeasonRewardShares(int rshares)
+        //{
+        //    if (UserDetails.current_season_player == null)
+        //    {
+        //        reloadUser = true;
+        //    }
+        //    else
+        //    {
+        //        UserDetails.current_season_player.rshares += rshares;
+        //        lastRsharesUpdate = rshares.ToString();
+        //    }
+        //}
+
+        internal void UpdateRating(int rating)
+        {
+            lastRatingUpdate = (rating - UserDetails.rating).ToString();
+            UserDetails.rating = rating;
+        }
+
+        //
+        internal void UpdateModernLeague(int league)
+        {
+            UserDetails.modern_league = league;
+        }
+
+        internal void UpdateModernMaxLeague(int maxLeague)
+        {
+            UserDetails.modern_season_max_league = maxLeague;
+        }
+
+        //internal void UpdateModernSeasonRewardShares(int rshares)
+        //{
+        //    if (UserDetails.current_season_player == null)
+        //    {
+        //        reloadUser = true;
+        //    }
+        //    else
+        //    {
+        //        UserDetails.current_modern_season_player.rshares += rshares;
+        //        lastRsharesUpdate = rshares.ToString();
+        //    }
+        //}
+
+        internal void UpdateModernRating(int rating)
+        {
+            lastRatingUpdate = (rating - UserDetails.modern_rating).ToString();
+            UserDetails.modern_rating = rating;
+        }
+        //
+
+        internal void UpdateCollectionPower(int cp)
+        {
+            UserDetails.collection_power = cp;
+            refreshCards = true;
+            Logs.LogMessage($"{UserData.Username}: CP change detected, refreshing cards collection on next loop", Logs.LOG_ALERT);
+        }
+        internal void UpdateBattleResults(int status, string winner)
+        {
+            if (winner == UserDetails.name)
+            {
+                Logs.LogMessage($"{UserData.Username}: Match Won {(status == 8 ? "(Enemy surrendered) " : "")}[Rating: {UserDetails.rating}(+{lastRatingUpdate}); Reward: { lastDecUpdate } DEC; RShares: {lastRsharesUpdate}]", Logs.LOG_SUCCESS);
+                InstanceManager.UsersStatistics[InstanceIndex].Wins++;
+                InstanceManager.UsersStatistics[InstanceIndex].MatchRewards = Convert.ToDouble(lastDecUpdate);
+                InstanceManager.UsersStatistics[InstanceIndex].TotalRewards = InstanceManager.UsersStatistics[InstanceIndex].TotalRewards + Convert.ToDouble(lastDecUpdate);
+                InstanceManager.UsersStatistics[InstanceIndex].RatingChange = "+" + lastRatingUpdate;
+                InstanceManager.UsersStatistics[InstanceIndex].Rating = UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating;
+            }
+            else if (winner == "DRAW")
+            {
+                Logs.LogMessage($"{UserData.Username}: Match was a Draw [Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}]", Logs.LOG_ALERT);
+                InstanceManager.UsersStatistics[InstanceIndex].Draws++;
+            }
             else
             {
-                decimal decReward = await webSocketClient.WaitForStateChange(GameState.balance_update, 10) ?
-                    (decimal)webSocketClient.states[GameState.balance_update]["amount"] : 0;
-
-                int newRating = await webSocketClient.WaitForStateChange(GameState.rating_update) ?
-                    (int)webSocketClient.states[GameState.rating_update]["new_rating"] : userDetails.rating;
-                int ratingChange = newRating - userDetails.rating;
-
-
-
-                if (await webSocketClient.WaitForStateChange(GameState.ecr_update))
-                {
-                    userBalance.ECR = ((double)webSocketClient.states[GameState.ecr_update]["capture_rate"]) / 100;
-                }
-                if (await webSocketClient.WaitForStateChange(GameState.quest_progress))
-                {
-                    questData = await SP_API.GetQuestData(UserData.Username);
-                }
-                userDetails.rating = newRating;
-
-                int battleResult = 0;
-                if ((string)webSocketClient.states[GameState.battle_result]["winner"] == UserData.Username)
-                {
-                    battleResult = 1;
-                }
-                else if ((string)webSocketClient.states[GameState.battle_result]["winner"] == "DRAW")
-                {
-                    battleResult = 2;
-                }
-
-                switch (battleResult)
-                {
-                    case 2:
-                        Logs.LogMessage($"{UserData.Username}: Match was a Draw [Rating: { newRating }]", Logs.LOG_ALERT);
-                        InstanceManager.UsersStatistics[InstanceIndex].Draws++;
-                        break;
-                    case 1:
-                        Logs.LogMessage($"{UserData.Username}: Match Won {(surrender ? "(Enemy surrendered) " : "")}[Rating: {newRating}(+{ratingChange.ToString()}); Reward: { decReward } DEC]", Logs.LOG_SUCCESS);
-                        InstanceManager.UsersStatistics[InstanceIndex].Wins++;
-                        InstanceManager.UsersStatistics[InstanceIndex].MatchRewards = Convert.ToDouble(decReward);
-                        InstanceManager.UsersStatistics[InstanceIndex].TotalRewards = InstanceManager.UsersStatistics[InstanceIndex].TotalRewards + Convert.ToDouble(decReward);
-                        InstanceManager.UsersStatistics[InstanceIndex].RatingChange = "+" + ratingChange.ToString();
-                        InstanceManager.UsersStatistics[InstanceIndex].Rating = newRating;
-
-                        break;
-                    case 0:
-                        Logs.LogMessage($"{UserData.Username}: Match Lost [Rating: {newRating}({ratingChange.ToString()})]", Logs.LOG_WARNING);
-                        InstanceManager.UsersStatistics[InstanceIndex].Losses++;
-                        InstanceManager.UsersStatistics[InstanceIndex].RatingChange = ratingChange.ToString();
-                        InstanceManager.UsersStatistics[InstanceIndex].Rating = newRating;
-                        break;
-                    default:
-                        break;
-                }
+                Logs.LogMessage($"{UserData.Username}: Match Lost [Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}({lastRatingUpdate})]", Logs.LOG_WARNING);
+                InstanceManager.UsersStatistics[InstanceIndex].Losses++;
+                InstanceManager.UsersStatistics[InstanceIndex].RatingChange = lastRatingUpdate;
+                InstanceManager.UsersStatistics[InstanceIndex].Rating = UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating;
             }
+            BattleState.ResultsReceived = true;
         }
-        private async Task<bool> WaitForTransactionSuccess(string tx, int secondsToWait)
+
+        internal void UpdateFocusInfo(string id, string player, DateTime created_date, int created_block, string name, int total_items, int completed_items, string? claim_trx_id, DateTime? claim_date, int reward_qty, string? refresh_trx_id, int chest_tier, int rshares)
+        {
+            UserDetails.quest.id = id;
+            UserDetails.quest.player = player;
+            UserDetails.quest.created_date = created_date;
+            UserDetails.quest.created_block = created_block;
+            UserDetails.quest.name = name;
+            UserDetails.quest.total_items = total_items;
+            UserDetails.quest.completed_items = completed_items;
+            if (claim_trx_id != null)
+                UserDetails.quest.claim_trx_id = claim_trx_id;
+            if (claim_date != null)
+                UserDetails.quest.claim_date = claim_date;
+            UserDetails.quest.reward_qty = reward_qty;
+            if (refresh_trx_id != null)
+                UserDetails.quest.refresh_trx_id = refresh_trx_id;
+            UserDetails.quest.chest_tier = chest_tier;
+            UserDetails.quest.rshares = rshares;
+        }
+
+        internal void UpdateStakedSpsBalance(double spsp)
+        {
+            UserDetails.balances.Where(x=>x.token == "SPSP").First().balance = spsp;
+        }
+
+        internal void UpdateCreditsBalance(double credits)
+        {
+            UserDetails.balances.Where(x => x.token == "CREDITS").First().balance = credits;
+        }
+
+        internal void UpdatePacksBalance(double packs)
+        {
+            UserDetails.balances.Where(x => x.token == "CHAOS").First().balance = packs;
+        }
+
+        internal void UpdateGoldPotionsBalance(double gPotions)
+        {
+            UserDetails.balances.Where(x => x.token == "GOLD").First().balance = gPotions;
+        }
+
+        internal void UpdateLegendaryPotionsBalance(double lPotions)
+        {
+            UserDetails.balances.Where(x => x.token == "LEGENDARY").First().balance = lPotions;
+        }
+
+        internal void UpdateSpsBalance(double sps)
+        {
+            UserDetails.balances.Where(x => x.token == "SPS").First().balance = sps;
+        }
+
+        internal void UpdateDecBalance(double dec)
+        {
+            UserDetails.balances.Where(x => x.token == "DEC").First().balance = dec;
+        }
+
+        internal void UpdateLastReward(double lastDec)
+        {
+            lastDecUpdate = lastDec.ToString();
+        }
+
+        internal void UpdateECR(Balance ecr)
+        {
+            UserDetails.balances.First(x => x.token == "ECR").balance = ecr.balance;
+            UserDetails.balances.First(x => x.token == "ECR").last_reward_block = ecr.last_reward_block;
+            UserDetails.balances.First(x => x.token == "ECR").last_reward_time = ecr.last_reward_time;
+        }
+        #endregion
+        
+        private async Task<(bool, JToken)> WaitForTransactionSuccess(string tx, int secondsToWait)
         {
             if (tx.Length == 0)
             {
-                return false;
+                return (false,null);
             }
 
             for (int i = 0; i < secondsToWait * 2; i++)
             {
                 await Task.Delay(500);
-                if (WebSocket.states.ContainsKey(GameState.transaction_complete)
-                    && (string)webSocketClient.states[GameState.transaction_complete]["trx_info"]["id"] == tx)
+                if (WebSocket.transactions.Where(x => x.message["data"]["trx_info"]["id"].ToString() == tx).Any())
                 {
-                    if ((bool)webSocketClient.states[GameState.transaction_complete]["trx_info"]["success"])
+                    WebSocketTransactionMessage transaction = WebSocket.transactions.Where(x => x.message["data"]["trx_info"]["id"].ToString() == tx).First();
+                    if ((bool)transaction.message["data"]["trx_info"]["success"])
                     {
-                        return true;
+                        return (true,transaction.message);
                     }
                     else
                     {
-                        Logs.LogMessage($"{UserData.Username}: Transaction error: " + tx + " - " + (string)webSocketClient.states[GameState.transaction_complete]["trx_info"]["error"], Logs.LOG_WARNING);
-                        return false;
+                        Logs.LogMessage($"{UserData.Username}: Transaction error: " + tx + " - " + (string)transaction.message["data"]["trx_info"]["error"], Logs.LOG_WARNING);
+                        return (false, null);
                     }
                 }
             }
             Logs.LogMessage($"{UserData.Username}: No response from websocket.", Logs.LOG_WARNING);
-            return false;
-        }
-
-        private double ComputeECR(List<Balance> balances)
-        {
-            var values = balances.Where(x => x.token == "ECR").Any() ? balances.Where(x => x.token == "ECR").First() : null;
-            if (values != null)
-            {
-                if (values.balance == 0)
-                { return 100; }
-                else
-                {
-                    double rechargeRate = 0.0868;
-                    double ecr = values.balance + (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset((DateTime)values.last_reward_time).ToUnixTimeMilliseconds()) / 3000 * rechargeRate;
-                    return Math.Min(ecr, 10000) / 100;
-                }
-            }
-
-            return 0;
+            return (false, null);
         }
 
         private void OutputQuestResults(string response)
         {
-            Models.Account.QuestRewardData rewardData = JsonConvert.DeserializeObject<Models.Account.QuestRewardData>(response);
+            string responseClean = response.Replace("\"{", "{").Replace("}\"", "}").Replace(@"\", "");
+            Models.Account.QuestRewardData rewardData = JsonConvert.DeserializeObject<Models.Account.QuestRewardData>(responseClean);
             if (rewardData.trx_info.result.success == true)
             {
                 string[] rewards = new string[rewardData.trx_info.result.rewards.Count];
@@ -628,14 +754,34 @@ namespace SplinterlandsRObot.Game
         {
             try
             {
-                int highestPossibleLeague = GetMaxLeagueByRankAndPower(UserDetails.rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power);
+                int highestPossibleLeague = UserConfig.BattleMode == "modern"?
+                    GetMaxModernLeagueByRankAndPower((int)UserDetails.modern_rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power)
+                    : GetMaxLeagueByRankAndPower(UserDetails.rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power);
                 if (highestPossibleLeague > UserDetails.league && highestPossibleLeague <= (UserConfig.MaxLeague == 0 ? 13 : UserConfig.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
 
-                    string tx = HiveActions.AdvanceLeague(UserData);
-                    if (await WaitForTransactionSuccess(tx, 45))
+                    string tx = HiveActions.AdvanceLeague(UserData, UserConfig.BattleMode);
+                    JToken response = null;
+                    bool success = false;
+                    (success, response) = await WaitForTransactionSuccess(tx, 45);
+                    if (success)
                     {
+                        JToken leagueData = JToken.Parse(response["data"]["trx_info"]["result"].ToString());
+                        if (leagueData.ToString().Contains("modern_league"))
+                            UpdateModernLeague((int)leagueData["modern_league"]);
+                        else
+                            UpdateLeague((int)leagueData["league"]);
+
+                        if (leagueData.ToString().Contains("modern_season_max_league"))
+                            UpdateModernMaxLeague((int)leagueData["modern_season_max_league"]);
+                        else
+                            UpdateMaxLeague((int)leagueData["season_max_league"]);
+
+                        if (leagueData.ToString().Contains("modern_rating"))
+                            UpdateModernRating((int)leagueData["modern_rating"]);
+                        else
+                            UpdateRating((int)leagueData["rating"]);
                         Logs.LogMessage($"{UserData.Username}: Advanced league: {tx}");
                     }
                 }
@@ -664,6 +810,31 @@ namespace SplinterlandsRObot.Game
             }
             //silver
             if ((rating is >= 1000) && (power is >= 15000))
+            {
+                return 4;
+            }
+
+            return 0;
+        }
+        private int GetMaxModernLeagueByRankAndPower(int rating, int power)
+        {
+            //champion
+            if ((rating is >= 3700) && (power is >= 250000))
+            {
+                return 13;
+            }
+            //diamong
+            if ((rating is >= 2800) && (power is >= 125000))
+            {
+                return 10;
+            }
+            //gold
+            if ((rating is >= 1900) && (power is >= 50000))
+            {
+                return 7;
+            }
+            //silver
+            if ((rating is >= 1000) && (power is >= 7500))
             {
                 return 4;
             }

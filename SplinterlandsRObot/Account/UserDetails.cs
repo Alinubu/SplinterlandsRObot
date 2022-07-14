@@ -1,4 +1,6 @@
-﻿namespace SplinterlandsRObot.Models.Account
+﻿using Newtonsoft.Json.Linq;
+
+namespace SplinterlandsRObot.Models.Account
 {
     public class UserDetails
     {
@@ -7,28 +9,38 @@
         public string token { get; set; }
         public bool starter_pack_purchase { get; set; }
         public int rating { get; set; }
+        public int? modern_rating { get; set; }
         public int max_rating { get; set; }
+        public int? modern_max_rating { get; set; }
         public int battles { get; set; }
+        public int? modern_battle { get; set; }
         public int wins { get; set; }
+        public int? modern_wins { get; set; }
         public int current_streak { get; set; }
+        public int? modern_current_streak { get; set; }
         public int longest_streak { get; set; }
+        public int? modern_longest_streak { get; set; }
         public int max_rank { get; set; }
+        public int? modern_max_rank { get; set; }
         public int champion_points { get; set; }
         public int capture_rate { get; set; }
         public int last_reward_block { get; set; }
         public DateTime last_reward_time { get; set; }
         public int collection_power { get; set; }
         public int league { get; set; }
+        public int? modern_league { get; set; }
         public List<Balance> balances { get; set; }
         //public List<object> unrevealed_rewards { get; set; }
         public int season_max_league { get; set; }
-        public Quest quest { get; set; }
+        public int? modern_season_max_league { get; set; }
+        public Quest? quest { get; set; }
         public SeasonReward? season_reward { get; set; }
         public CurrentSeasonPlayer? current_season_player { get; set; }
+        public CurrentSeasonPlayer? current_modern_season_player { get; set; }
         public PreviousSeasonPlayer? previous_season_player { get; set; }
         public string jwt_token { get; set; }
         public DateTime jwt_expiration_dt { get; set; }
-        public string? outstanding_match { get; set; }
+        public JToken? outstanding_match { get; set; }
     }
     public class Balance
     {
@@ -52,6 +64,7 @@
         public int max_league { get; set; }
         public int chest_tier { get; set; }
         public int rshares { get; set; }
+        public int? earned_chests { get; set; }
     }
     public class PreviousSeasonPlayer
     {

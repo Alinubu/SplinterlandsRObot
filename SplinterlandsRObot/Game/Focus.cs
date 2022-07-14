@@ -15,7 +15,7 @@ namespace SplinterlandsRObot.Game
 
             int neededRshares = GetFocusPointsNeeded(baseRshares, multiplier, rshares);
 
-            string response = $"{totalEarnedChests}/{maxChests}|{rshares}/{neededRshares}";
+            string response = $"{totalEarnedChests}/{maxChests}|{rshares}/{neededRshares}]";
             return response;
         }
 
@@ -26,42 +26,42 @@ namespace SplinterlandsRObot.Game
             int chests = 0;
             int fp_limit = baseRshares;
 
-            while (rshares > fp_limit)
+            while (rshares >= fp_limit)
             {
                 chests++;
                 fp_limit = Convert.ToInt32(baseRshares + fp_limit * multiplier);
             }
 
-            return chests;
+            return Math.Min(chests,30);
         }
 
         internal int GetFocusPointsNeeded(int baseRshares, double multiplier, double rshares)
         {
             int fp_limit = baseRshares;
-            while (rshares > fp_limit)
+            while (rshares >= fp_limit)
             {
                 fp_limit = Convert.ToInt32(baseRshares + fp_limit * multiplier);
             }
             return fp_limit;
         }
 
-        public async Task<bool> ClaimQuestReward(Quest questData, User user)
+        public async Task<string> ClaimQuestReward(Quest questData, User user)
         {
             try
             {
                 string tx = new HiveActions().ClaimQuest(user, questData.id);
                 Logs.LogMessage($"{user.Username}: Claimed Daily Focus reward. Tx:{tx}");
 
-                return true;
+                return tx;
             }
             catch (Exception ex)
             {
                 Logs.LogMessage($"{user.Username}: Error at claiming Daily Focus rewards: {ex}", Logs.LOG_WARNING);
             }
-            return false;
+            return null;
         }
 
-        public bool RequestNewFocus(Quest questData, User user)
+        public string RequestNewFocus(Quest questData, User user)
         {
             bool focusCompleted = false;
             if ((DateTime.Now - questData.created_date.ToLocalTime()).TotalHours > 24 && questData.claim_trx_id != null)
@@ -71,24 +71,26 @@ namespace SplinterlandsRObot.Game
 
             if (questData != null && !focusCompleted)
             {
-                if (new HiveActions().NewQuest(user))
+                string tx = new HiveActions().NewQuest(user);
+                if (tx != null)
                 {
-                    return true;
+                    return tx;
                 }
             }
-            return false;
+            return null;
         }
 
-        public bool RequestNewFocus(User user)
+        public string RequestNewFocus(User user)
         {
-            if (new HiveActions().NewQuest(user))
+            string tx = new HiveActions().NewQuest(user);
+            if (tx != null)
             {
-                return true;
+                return tx;
             }
-            return false;
+            return null;
         }
 
-        public async Task<bool> CheckForNewFocus(Quest questData, User user)
+        public async Task<string> CheckForNewFocus(Quest questData, User user)
         {
             if (questData != null)
             {
@@ -97,10 +99,11 @@ namespace SplinterlandsRObot.Game
                     if (questData.claim_trx_id != null && questData.earned_chests > 0)
                     {
                         Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
-                        if (new HiveActions().StartFocus(user))
+                        string tx = new HiveActions().StartFocus(user);
+                        if (tx != null)
                         {
                             Logs.LogMessage($"{user.Username}: New Focus started", Logs.LOG_SUCCESS);
-                            return true;
+                            return tx;
                         }
                         else
                         {
@@ -110,10 +113,11 @@ namespace SplinterlandsRObot.Game
                     else if (questData.claim_trx_id == null && questData.earned_chests == 0)
                     {
                         Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
-                        if (new HiveActions().StartFocus(user))
+                        string tx = new HiveActions().StartFocus(user);
+                        if (tx != null)
                         {
                             Logs.LogMessage($"{user.Username}: New Focus started", Logs.LOG_SUCCESS);
-                            return true;
+                            return tx;
                         }
                         else
                         {
@@ -126,7 +130,7 @@ namespace SplinterlandsRObot.Game
                     }
                 }
             }
-            return false;
+            return null;
         }
 
         public string GetCardsColorByQuestType(string questTitle)
@@ -158,24 +162,24 @@ namespace SplinterlandsRObot.Game
             return "";
         }
 
-        internal bool IsFocusPrio(Random random, string focusColor)
+        internal bool IsFocusPrio(Random random, string focusColor, Config config)
         {
             double rng = random.NextDouble();
 
-            if (focusColor == "Fire" && Settings.SPLINTER_FOCUS_FIRE >= 0)
-                return rng >= (Settings.SPLINTER_FOCUS_FIRE/100) ? false : true;
-            else if (focusColor == "Water" && Settings.SPLINTER_FOCUS_WATER >= 0)
-                return rng >= (Settings.SPLINTER_FOCUS_WATER / 100) ? false : true;
-            else if (focusColor == "Earth" && Settings.SPLINTER_FOCUS_EARTH >= 0)
-                return rng >= (Settings.SPLINTER_FOCUS_EARTH / 100) ? false : true;
-            else if (focusColor == "Life" && Settings.SPLINTER_FOCUS_LIFE >= 0)
-                return rng >= (Settings.SPLINTER_FOCUS_LIFE / 100) ? false : true;
-            else if (focusColor == "Death" && Settings.SPLINTER_FOCUS_DEATH >= 0)
-                return rng >= (Settings.SPLINTER_FOCUS_DEATH / 100) ? false : true;
-            else if (focusColor == "Dragon" && Settings.SPLINTER_FOCUS_DRAGON >= 0)
-                return rng >= (Settings.SPLINTER_FOCUS_DRAGON / 100) ? false : true;
+            if (focusColor == "Fire" && config.FocusRateFire >= 0)
+                return rng >= (config.FocusRateFire / 100) ? false : true;
+            else if (focusColor == "Water" && config.FocusRateWater >= 0)
+                return rng >= (config.FocusRateWater / 100) ? false : true;
+            else if (focusColor == "Earth" && config.FocusRateEarth >= 0)
+                return rng >= (config.FocusRateEarth / 100) ? false : true;
+            else if (focusColor == "Life" && config.FocusRateLife >= 0)
+                return rng >= (config.FocusRateLife / 100) ? false : true;
+            else if (focusColor == "Death" && config.FocusRateDeath >= 0)
+                return rng >= (config.FocusRateDeath / 100) ? false : true;
+            else if (focusColor == "Dragon" && config.FocusRateDragon >= 0)
+                return rng >= (config.FocusRateDragon / 100) ? false : true;
 
-            return rng >= (Settings.FOCUS_RATE / 100) ? false : true;
+            return rng >= (config.FocusRate / 100) ? false : true;
         }
     }
 }
