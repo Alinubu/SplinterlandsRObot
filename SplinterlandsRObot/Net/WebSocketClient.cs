@@ -87,7 +87,8 @@ namespace SplinterlandsRObot.Classes.Net
                 return;
             }
             JToken json = JToken.Parse(message.Text);
-            
+
+            Logs.LogMessage($"{username}: WebMessage received: {json.ToString()}", Logs.LOG_INFO, supress: true);
 
             string messageType = json["id"].ToString();
 
@@ -123,12 +124,13 @@ namespace SplinterlandsRObot.Classes.Net
                     {
                         instance.UpdateModernMaxLeague((int)json["data"]["modern"]["new_max_league"]);
                     }
-                    //if (json["data"]["modern"].ToString().Contains("additional_season_rshares"))
-                    //{
-                    //    instance.UpdateModernSeasonRewardShares((int)json["data"]["modern"]["additional_season_rshares"]);
-                    //}
+                    if (json["data"]["modern"].ToString().Contains("additional_season_rshares"))
+                    {
+                        instance.UpdateModernSeasonRewardShares((int)json["data"]["modern"]["additional_season_rshares"]);
+                    }
                 }
-                else if (json["data"].ToString().Contains("wild"))
+                
+                if (json["data"].ToString().Contains("wild"))
                 {
                     if (json["data"]["wild"].ToString().Contains("new_rating"))
                     {
@@ -142,10 +144,10 @@ namespace SplinterlandsRObot.Classes.Net
                     {
                         instance.UpdateMaxLeague((int)json["data"]["wild"]["new_max_league"]);
                     }
-                    //if (json["data"]["wild"].ToString().Contains("additional_season_rshares"))
-                    //{
-                    //    instance.UpdateSeasonRewardShares((int)json["data"]["wild"]["additional_season_rshares"]);
-                    //}
+                    if (json["data"]["wild"].ToString().Contains("additional_season_rshares"))
+                    {
+                        instance.UpdateSeasonRewardShares((int)json["data"]["wild"]["additional_season_rshares"]);
+                    }
                 }
                 
                 if (json["data"].ToString().Contains("new_collection_power"))

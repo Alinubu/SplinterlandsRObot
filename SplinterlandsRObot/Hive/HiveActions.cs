@@ -31,8 +31,12 @@ namespace SplinterlandsRObot.Hive
                 throw new Exception("Invalid username or posting key in users.xml");
             }
             UserDetails userDetails = JsonConvert.DeserializeObject<UserDetails>(response);
+            if (userDetails == null)
+            {
+                throw new Exception("Error at user login. No response received");
+            }
             Logs.LogMessage($"{username}: Login OK", Logs.LOG_SUCCESS);
-            Thread.Sleep(650);
+            Thread.Sleep(655);
             return userDetails;
         }
         public string StartNewMatch(User user, string battleMode)
@@ -49,8 +53,11 @@ namespace SplinterlandsRObot.Hive
                 CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
                 var postData = GetStringForSplinterlandsAPI(oTransaction);
                 var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API, Referer: "https://splinterlands.com/");
-                if (response == "" || !response.Contains("success"))
+                Logs.LogMessage($"{user.Username}: {response}", Logs.LOG_ALERT, supress: true);
+                if (response == "")
                     return "";
+                if (!response.Contains("success"))
+                    return "error";
 
                 string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
                 return responseTx;
@@ -284,7 +291,8 @@ namespace SplinterlandsRObot.Hive
         internal string AdvanceLeague(User user, string format)
         {
             string n = Helpers.RandomString(10);
-            string json = "{\"notify\":\"false\"" + format == "modern" ? ",\"format\":\"modern\"" : "" + ",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
+            string leagueFormat = format == "modern" ? ",\"format\":\"modern\"" : string.Empty;
+            string json = "{\"notify\":\"false\"" + leagueFormat + ",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
 
             COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_advance_league", json);
 

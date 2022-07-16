@@ -75,18 +75,13 @@ namespace SplinterlandsRObot.Models.Account
 
         private string _filename;
 
-        private FileSystemWatcher _fsWatcher;
+        //private FileSystemWatcher _fsWatcher;
 
         public Config(string fileName)
         {
 
             _filename = fileName;
-            _fsWatcher = new FileSystemWatcher();
-            _fsWatcher.Path = Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER);
-            _fsWatcher.NotifyFilter = NotifyFilters.LastWrite;
-            _fsWatcher.Changed += new FileSystemEventHandler(OnConfigChanged);
-            _fsWatcher.Filter = _filename;
-            _fsWatcher.EnableRaisingEvents = true;
+            InstanceManager._configs.Subscribe(OnConfigChanged);
             LoadSettings();
         }
 
@@ -152,11 +147,11 @@ namespace SplinterlandsRObot.Models.Account
             UsePrivateApi = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/UsePrivateAPi", false, "false"));
         }
 
-        private void OnConfigChanged(object sender, FileSystemEventArgs e)
+        private void OnConfigChanged(string filename)
         {
-            Logs.LogMessage($"{_filename} changed, updating user", Logs.LOG_ALERT);
             Thread.Sleep(2000);
-            LoadSettings();
+            if (filename == _filename)
+                LoadSettings();
         }
 
         public void CheckForUpdates()

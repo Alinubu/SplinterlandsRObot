@@ -2,7 +2,6 @@
 <settings>
 	<DoBattle>true</DoBattle>
 	<MaxThreads>1</MaxThreads><!--The number of accounts the bot will play in parallel-->
-	<HoldCacheFor>30</HoldCacheFor><!--Time in minutes the bot will cache data from splinterlands-->
 	<DebugMode>false</DebugMode><!--Just enable this if you have issues, will diplay a lot more logs in the console-->
 	<ApiUrl>http://api.splinterlandsrobot.com:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
 	<HiveNode>https://anyx.io/</HiveNode>

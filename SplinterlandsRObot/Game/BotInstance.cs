@@ -40,6 +40,7 @@ namespace SplinterlandsRObot.Game
         public string focusSplinter = "";
         private string focusProgress = "";
         private string lastRatingUpdate = "0";
+        private string lastModernRatingUpdate = "0";
         private string lastDecUpdate = "0";
         private string lastRsharesUpdate = "0";
         private bool focusRenewed = false;
@@ -80,10 +81,10 @@ namespace SplinterlandsRObot.Game
                 Losses = 0,
                 MatchRewards = 0,
                 TotalRewards = 0,
-                Rating = UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating,
+                Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating),
                 RatingChange = "",
                 League = UserConfig.BattleMode == "modern" ? 
-                                    SplinterlandsData.splinterlandsSettings.leagues.modern[UserDetails.league].name
+                                    SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
                                     : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name,
                 CollectionPower = UserDetails.collection_power,
                 Quest = "",
@@ -157,8 +158,16 @@ namespace SplinterlandsRObot.Game
                         {
                             Logs.LogMessage($"{UserData.Username}: CP is below limit, user already in renting queue", Logs.LOG_ALERT);
                         }
-                                
+                        
                         if (!UserConfig.BattleWhileRenting)
+                        {
+                            SleepUntil = DateTime.Now.AddMinutes(5);
+                            return SleepUntil;
+                        }
+                    }
+
+                    if (InstanceManager.FocusRentingQueue.ContainsKey(UserData.Username) && !UserConfig.BattleWhileRenting)
+                    {
                         {
                             SleepUntil = DateTime.Now.AddMinutes(5);
                             return SleepUntil;
@@ -177,6 +186,38 @@ namespace SplinterlandsRObot.Game
                 //UserDetails.current_season_player.earned_chests = season.CalculateEarnedChests((int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
                 //InstanceManager.UsersStatistics[botInstance].Season = season.GetSeasonProgress((int)UserDetails.current_season_player.earned_chests, (int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
 
+                Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {UserBalance.ECR}%", supress: true);
+
+                if (!waitForECR)
+                {
+                    if ((UserBalance.ECR) < UserConfig.EcrLimit)
+                    {
+                        Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(UserBalance.ECR)}%/{UserConfig.EcrLimit}%] ", Logs.LOG_ALERT);
+                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
+                        //await Task.Delay(1500); WHYYY?????
+                        if (UserConfig.WaitToRechargeEcr)
+                        {
+                            waitForECR = true;
+                            Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {UserConfig.EcrRechargeLimit}%", Logs.LOG_ALERT);
+                        }
+                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
+                        return SleepUntil;
+                    }
+                }
+                else
+                {
+                    if ((UserBalance.ECR) < UserConfig.EcrRechargeLimit)
+                    {
+                        Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%. Moving to next account", Logs.LOG_ALERT);
+                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
+                        return SleepUntil;
+                    }
+                    else
+                    {
+                        Logs.LogMessage($"{UserData.Username}: ECR Restored {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%", Logs.LOG_SUCCESS);
+                        waitForECR = false;
+                    }
+                }
 
                 if (UserConfig.FocusEnabled)
                     Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
@@ -306,44 +347,13 @@ namespace SplinterlandsRObot.Game
                     InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - UserDetails.quest.created_date.ToLocalTime()).TotalHours).ToString();
                     InstanceManager.UsersStatistics[botInstance].Balance = UserBalance;
                     InstanceManager.UsersStatistics[botInstance].CollectionPower = UserDetails.collection_power;
-                    
+                    InstanceManager.UsersStatistics[botInstance].League = UserConfig.BattleMode == "modern" ?
+                                    SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
+                                    : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name;
                 }
                 else
                 {
                     Logs.LogMessage($"{UserData.Username}: Having issues requesting Daily Focus info", Logs.LOG_WARNING);
-                }
-
-                Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {UserBalance.ECR}%", supress: true);
-
-                if (!waitForECR)
-                {
-                    if ((UserBalance.ECR) < UserConfig.EcrLimit)
-                    {
-                        Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(UserBalance.ECR)}%/{UserConfig.EcrLimit}%] ", Logs.LOG_ALERT);
-                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
-                        //await Task.Delay(1500); WHYYY?????
-                        if (UserConfig.WaitToRechargeEcr)
-                        {
-                            waitForECR = true;
-                            Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {UserConfig.EcrRechargeLimit}%", Logs.LOG_ALERT);
-                        }
-                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
-                        return SleepUntil;
-                    }
-                }
-                else
-                {
-                    if ((UserBalance.ECR) < UserConfig.EcrRechargeLimit)
-                    {
-                        Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%. Moving to next account", Logs.LOG_ALERT);
-                        SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
-                        return SleepUntil;
-                    }
-                    else
-                    {
-                        Logs.LogMessage($"{UserData.Username}: ECR Restored {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%", Logs.LOG_SUCCESS);
-                        waitForECR = false;
-                    }
                 }
 
                 if (!UserConfig.UsePrivateApi)
@@ -363,16 +373,31 @@ namespace SplinterlandsRObot.Game
                 matchDetails = null;
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                string tx = HiveActions.StartNewMatch(UserData, UserConfig.BattleMode); //maybe remove tx
+                string tx = HiveActions.StartNewMatch(UserData, UserConfig.BattleMode);
 
-                
+                if (tx == "")
+                {
+                    var sleepTime = 5;
+                    Logs.LogMessage($"{UserData.Username}: Error requesting new match(no response from battle api). Waiting {sleepTime} minutes.", Logs.LOG_WARNING);
+                    SleepUntil = DateTime.Now.AddMinutes(sleepTime);
+                    return SleepUntil;
+                }
 
-                if (tx == "" || !await BattleState.WaitForBattleStarted(30))
+                if (tx == "error" || !WaitForTransactionSuccess(tx, 30).Result.Item1)
                 {
                     var outstandingGame = await SplinterlandsAPI.GetOutstandingMatch(UserData.Username);
                     if (outstandingGame != "null")
                     {
                         tx = Helpers.DoQuickRegex("\"id\":\"(.*?)\"", outstandingGame);
+
+                        if (tx == "")
+                        {
+                            var sleepTime = 5;
+                            Logs.LogMessage($"{UserData.Username}: Error requesting new match(no response from battle api). Waiting {sleepTime} minutes.", Logs.LOG_WARNING);
+                            SleepUntil = DateTime.Now.AddMinutes(sleepTime);
+                            return SleepUntil;
+                        }
+
                         var teamHash = Helpers.DoQuickRegex("\"team_hash\":\"(.*?)\"", outstandingGame);
                         Logs.LogMessage($"{UserData.Username}: Found ongoing match: " + tx, Logs.LOG_WARNING);
                         if (teamHash.Length == 0)
@@ -411,10 +436,7 @@ namespace SplinterlandsRObot.Game
                             return SleepUntil;
                         }
                     }
-                    else
-                    {
-                        Logs.LogMessage($"{UserData.Username}: New match found - Manacap: {matchDetails["mana_cap"]}; Ruleset: {matchDetails["ruleset"]}; Inactive splinters: {matchDetails["inactive"]}", Logs.LOG_ALERT);
-                    }
+                    Logs.LogMessage($"{UserData.Username}: New match found - Manacap: {matchDetails["mana_cap"]}; Ruleset: {matchDetails["ruleset"]}; Inactive splinters: {matchDetails["inactive"]}", Logs.LOG_ALERT);
                     
                     try
                     {
@@ -517,8 +539,8 @@ namespace SplinterlandsRObot.Game
         #region Update
         internal void UpdateMatchFound(bool s, JToken details)
         {
-            BattleState.BattleStarted = s;
             matchDetails = details;
+            BattleState.BattleStarted = s;
         }
         internal void UpdateOpponentSubmitTeam(bool s)
         {
@@ -534,18 +556,18 @@ namespace SplinterlandsRObot.Game
             UserDetails.season_max_league = maxLeague;
         }
 
-        //internal void UpdateSeasonRewardShares(int rshares)
-        //{
-        //    if (UserDetails.current_season_player == null)
-        //    {
-        //        reloadUser = true;
-        //    }
-        //    else
-        //    {
-        //        UserDetails.current_season_player.rshares += rshares;
-        //        lastRsharesUpdate = rshares.ToString();
-        //    }
-        //}
+        internal void UpdateSeasonRewardShares(int rshares)
+        {
+            if (UserDetails.current_season_player == null)
+            {
+                reloadUser = true;
+            }
+            else
+            {
+                UserDetails.current_season_player.rshares += rshares;
+                lastRsharesUpdate = rshares.ToString();
+            }
+        }
 
         internal void UpdateRating(int rating)
         {
@@ -553,7 +575,6 @@ namespace SplinterlandsRObot.Game
             UserDetails.rating = rating;
         }
 
-        //
         internal void UpdateModernLeague(int league)
         {
             UserDetails.modern_league = league;
@@ -564,25 +585,24 @@ namespace SplinterlandsRObot.Game
             UserDetails.modern_season_max_league = maxLeague;
         }
 
-        //internal void UpdateModernSeasonRewardShares(int rshares)
-        //{
-        //    if (UserDetails.current_season_player == null)
-        //    {
-        //        reloadUser = true;
-        //    }
-        //    else
-        //    {
-        //        UserDetails.current_modern_season_player.rshares += rshares;
-        //        lastRsharesUpdate = rshares.ToString();
-        //    }
-        //}
+        internal void UpdateModernSeasonRewardShares(int rshares)
+        {
+            if (UserDetails.current_season_player == null)
+            {
+                reloadUser = true;
+            }
+            else
+            {
+                UserDetails.current_modern_season_player.rshares += rshares;
+                lastRsharesUpdate = rshares.ToString();
+            }
+        }
 
         internal void UpdateModernRating(int rating)
         {
-            lastRatingUpdate = (rating - UserDetails.modern_rating).ToString();
+            lastModernRatingUpdate = (rating - UserDetails.modern_rating).ToString();
             UserDetails.modern_rating = rating;
         }
-        //
 
         internal void UpdateCollectionPower(int cp)
         {
@@ -592,26 +612,30 @@ namespace SplinterlandsRObot.Game
         }
         internal void UpdateBattleResults(int status, string winner)
         {
+            string ratingUpdate = (UserConfig.BattleMode == "modern" ? lastModernRatingUpdate : lastRatingUpdate);
             if (winner == UserDetails.name)
             {
-                Logs.LogMessage($"{UserData.Username}: Match Won {(status == 8 ? "(Enemy surrendered) " : "")}[Rating: {UserDetails.rating}(+{lastRatingUpdate}); Reward: { lastDecUpdate } DEC; RShares: {lastRsharesUpdate}]", Logs.LOG_SUCCESS);
+                if (Settings.DO_BATTLE)
+                    Logs.LogMessage($"{UserData.Username}: Match Won {(status == 8 ? "(Enemy surrendered) " : "")}[Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}(+{ratingUpdate}); Reward: { lastDecUpdate } DEC; RShares: {lastRsharesUpdate}]", Logs.LOG_SUCCESS);
                 InstanceManager.UsersStatistics[InstanceIndex].Wins++;
                 InstanceManager.UsersStatistics[InstanceIndex].MatchRewards = Convert.ToDouble(lastDecUpdate);
                 InstanceManager.UsersStatistics[InstanceIndex].TotalRewards = InstanceManager.UsersStatistics[InstanceIndex].TotalRewards + Convert.ToDouble(lastDecUpdate);
-                InstanceManager.UsersStatistics[InstanceIndex].RatingChange = "+" + lastRatingUpdate;
-                InstanceManager.UsersStatistics[InstanceIndex].Rating = UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating;
+                InstanceManager.UsersStatistics[InstanceIndex].RatingChange = "+" + ratingUpdate;
+                InstanceManager.UsersStatistics[InstanceIndex].Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating);
             }
             else if (winner == "DRAW")
             {
-                Logs.LogMessage($"{UserData.Username}: Match was a Draw [Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}]", Logs.LOG_ALERT);
+                if (Settings.DO_BATTLE)
+                    Logs.LogMessage($"{UserData.Username}: Match was a Draw [Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}]", Logs.LOG_ALERT);
                 InstanceManager.UsersStatistics[InstanceIndex].Draws++;
             }
             else
             {
-                Logs.LogMessage($"{UserData.Username}: Match Lost [Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}({lastRatingUpdate})]", Logs.LOG_WARNING);
+                if (Settings.DO_BATTLE)
+                    Logs.LogMessage($"{UserData.Username}: Match Lost [Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}({ratingUpdate})]", Logs.LOG_WARNING);
                 InstanceManager.UsersStatistics[InstanceIndex].Losses++;
-                InstanceManager.UsersStatistics[InstanceIndex].RatingChange = lastRatingUpdate;
-                InstanceManager.UsersStatistics[InstanceIndex].Rating = UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating;
+                InstanceManager.UsersStatistics[InstanceIndex].RatingChange = ratingUpdate;
+                InstanceManager.UsersStatistics[InstanceIndex].Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating);
             }
             BattleState.ResultsReceived = true;
         }
@@ -639,6 +663,7 @@ namespace SplinterlandsRObot.Game
         internal void UpdateStakedSpsBalance(double spsp)
         {
             UserDetails.balances.Where(x=>x.token == "SPSP").First().balance = spsp;
+
         }
 
         internal void UpdateCreditsBalance(double credits)
@@ -757,7 +782,7 @@ namespace SplinterlandsRObot.Game
                 int highestPossibleLeague = UserConfig.BattleMode == "modern"?
                     GetMaxModernLeagueByRankAndPower((int)UserDetails.modern_rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power)
                     : GetMaxLeagueByRankAndPower(UserDetails.rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power);
-                if (highestPossibleLeague > UserDetails.league && highestPossibleLeague <= (UserConfig.MaxLeague == 0 ? 13 : UserConfig.MaxLeague))
+                if (highestPossibleLeague > (UserConfig.BattleMode == "modern" ? UserDetails.modern_league : UserDetails.league) && highestPossibleLeague <= (UserConfig.MaxLeague == 0 ? 13 : UserConfig.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
 

@@ -10,7 +10,7 @@
   <League>
 	<AdvanceToNext>true</AdvanceToNext><!--Bot will advance user to a higher league (Bronze->Silver, Silver->Gold)-->
 	<AdvanceRatingThreshold>100</AdvanceRatingThreshold><!--Set a threshold for the rating to be above the league limit before the bot will advance to the next one-->
-	<MaxLeague>0</MaxLeague>
+	<MaxLeague>0</MaxLeague><!--Offers the option to advance until a specific league. Options: 0(Disabled) 4(Silver) 7(Gold) 10(Diamond) 13(Champion)-->
   </League>
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
@@ -32,7 +32,7 @@
   <Cards>
 	<PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
 	<ReplaceStarterCards>true</ReplaceStarterCards><!--Will try to replace starter cards in the given team with similar owned cards-->
-	<UseStarterCards>true</UseStarterCards>
+	<UseStarterCards>true</UseStarterCards><!--When disabled it will only used owned or rented cards, the starter/ghost cards will be excluded-->
   </Cards>
   <ProFeatures><!--This features are not available by default, dm me for details-->
 	<UsePrivateAPi>false</UsePrivateAPi><!--No Limit for API Calls-->
@@ -42,7 +42,7 @@
 	</Airdrops>
 	<RentalBot>
 	  <UseRentalBot>false</UseRentalBot><!--Enables the renting features, all settings below will be ignored if this is disabled-->
-	  <PowerLimit>0</PowerLimit>
+	  <PowerLimit>0</PowerLimit><!--Used by Rental Bot. When user CP is below limit it will be added to the renting queue-->
 	  <BattleWhileRenting>false</BattleWhileRenting><!--Accounts will continue to battle even if CP is below PowerLimit-->
 	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
 	  <MaxTriesPerUser>20</MaxTriesPerUser><!--Number of times it should try to rent the cards for one user before moving to the next one-->

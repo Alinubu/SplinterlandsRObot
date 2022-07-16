@@ -37,6 +37,7 @@ class Program
         SplinterlandsData.splinterlandsSettings = Task.Run(() => new Splinterlands().GetSplinterlandsSettings()).Result;
         InstanceManager.CreateUsersInstance();
         InstanceManager.CreateBotInstances(InstanceManager.userList);
+        InstanceManager.StartFileWatcher();
         Settings.CheckThreads();
         
 

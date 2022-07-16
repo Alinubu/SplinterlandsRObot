@@ -6,7 +6,6 @@
 		<is_gold>false</is_gold>
 		<xp>1</xp>
 		<price_limit>2</price_limit>
-		<renew_allowed>true</renew_allowed>
 	</card>
 	<card>
 		<card_detail_id>394</card_detail_id>
@@ -14,7 +13,6 @@
 		<is_gold>false</is_gold>
 		<xp>1</xp>
 		<price_limit>2</price_limit>
-		<renew_allowed>true</renew_allowed>
 	</card>
 	<card>
 		<card_detail_id>380</card_detail_id>
@@ -22,7 +20,6 @@
 		<is_gold>false</is_gold>
 		<xp>1</xp>
 		<price_limit>2</price_limit>
-		<renew_allowed>true</renew_allowed>
 	</card>
 	<card>
 		<card_detail_id>422</card_detail_id>
@@ -30,7 +27,6 @@
 		<is_gold>false</is_gold>
 		<xp>1</xp>
 		<price_limit>2</price_limit>
-		<renew_allowed>true</renew_allowed>
 	</card>
 	<card>
 		<card_detail_id>366</card_detail_id>
@@ -38,6 +34,5 @@
 		<is_gold>false</is_gold>
 		<xp>1</xp>
 		<price_limit>2</price_limit>
-		<renew_allowed>true</renew_allowed>
 	</card>
 </cards>
