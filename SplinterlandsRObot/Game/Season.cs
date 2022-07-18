@@ -35,12 +35,12 @@ namespace SplinterlandsRObot.Game
             int baseRshares = SplinterlandsData.splinterlandsSettings.loot_chests.season[chest_tier].@base;
             double multiplier = SplinterlandsData.splinterlandsSettings.loot_chests.season[chest_tier].step_multiplier;
             int chests = 0;
-            int fp_limit = baseRshares;
+            int sp_limit = baseRshares;
 
-            while (rshares >= fp_limit)
+            while (rshares >= sp_limit)
             {
                 chests++;
-                fp_limit = Convert.ToInt32(baseRshares + fp_limit * multiplier);
+                sp_limit = Convert.ToInt32(baseRshares + sp_limit * multiplier);
             }
 
             return Math.Min(chests, 150);

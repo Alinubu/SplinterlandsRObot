@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using SplinterlandsRObot.Models.Account;
-using SplinterlandsRObot.Classes.Net;
 using SplinterlandsRObot.Hive;
 using SplinterlandsRObot.API;
 using SplinterlandsRObot.Extensions;
@@ -9,6 +8,8 @@ using SplinterlandsRObot.Global;
 using Newtonsoft.Json;
 using SplinterlandsRObot.Models.Bot;
 using SplinterlandsRObot.Models.WebSocket;
+using Websocket.Client;
+using Websocket.Client.Models;
 
 namespace SplinterlandsRObot.Game
 {
@@ -24,17 +25,18 @@ namespace SplinterlandsRObot.Game
         private UserBalance UserBalance = new();
         private CardsCollection UserCards = new();
         private Focus focus = new();
-        private Season season = new Season();
         private BattleState BattleState = new();
         private HiveActions HiveActions = new();
         private Splinterlands SplinterlandsAPI = new();
         private Bot BotAPI = new();
-        private WebSocket WebSocket { get; set; }
-        
+        Season season = new Season();
+        private WebsocketClient _webSocket { get; set; }
+        public List<WebSocketTransactionMessage> _transactions = new();
         private Random random = new Random();
 
         private DateTime LastLogin = DateTime.MinValue;
         private DateTime LastAirdrop = DateTime.MinValue;
+        private DateTime LastCardsRefresh = DateTime.MinValue;
         private bool waitForECR = false;
         private bool focusCompleted = false;
         public string focusSplinter = "";
@@ -45,8 +47,6 @@ namespace SplinterlandsRObot.Game
         private string lastRsharesUpdate = "0";
         private bool focusRenewed = false;
         private DateTime SleepUntil = DateTime.MinValue;
-        private bool refreshCards = true;
-        private bool reloadUser = false;
         private bool prioritizeFocus = false;
         JToken matchDetails = null;
 
@@ -54,23 +54,7 @@ namespace SplinterlandsRObot.Game
         {
             UserData = user;
             InstanceIndex = instanceIndex;
-            UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey);
-            UserBalance = new UserBalance()
-            {
-                Credits = UserDetails.balances.Where(x => x.token == "CREDITS").Any() ? UserDetails.balances.Where(x => x.token == "CREDITS").First().balance : 0,
-                DEC = UserDetails.balances.Where(x => x.token == "DEC").Any() ? UserDetails.balances.Where(x => x.token == "DEC").First().balance : 0,
-                LegendaryPotions = UserDetails.balances.Where(x => x.token == "LEGENDARY").Any() ? (int)UserDetails.balances.Where(x => x.token == "LEGENDARY").First().balance : 0,
-                GoldPotions = UserDetails.balances.Where(x => x.token == "GOLD").Any() ? (int)UserDetails.balances.Where(x => x.token == "GOLD").First().balance : 0,
-                QuestPotions = UserDetails.balances.Where(x => x.token == "QUEST").Any() ? (int)UserDetails.balances.Where(x => x.token == "QUEST").First().balance : 0,
-                Packs = UserDetails.balances.Where(x => x.token == "CHAOS").Any() ? (int)UserDetails.balances.Where(x => x.token == "CHAOS").First().balance : 0,
-                Voucher = UserDetails.balances.Where(x => x.token == "VOUCHER").Any() ? UserDetails.balances.Where(x => x.token == "VOUCHER").First().balance : 0,
-                SPS = UserDetails.balances.Where(x => x.token == "SPS").Any() ? UserDetails.balances.Where(x => x.token == "SPS").First().balance : 0,
-                SPSP = UserDetails.balances.Where(x => x.token == "SPSP").Any() ? UserDetails.balances.Where(x => x.token == "SPSP").First().balance : 0,
-                ECR = 0
-            };
-            UserBalance.UpdateECR(UserDetails.balances);
-            LastLogin = DateTime.Now;
-            UserConfig = new Config(UserData.ConfigFile);
+            UpdateUserDetails(725);
             InstanceManager.UsersStatistics.Add(new UserStats()
             {
                 Account = UserData.Username,
@@ -83,7 +67,7 @@ namespace SplinterlandsRObot.Game
                 TotalRewards = 0,
                 Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating),
                 RatingChange = "",
-                League = UserConfig.BattleMode == "modern" ? 
+                League = UserConfig.BattleMode == "modern" ?
                                     SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
                                     : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name,
                 CollectionPower = UserDetails.collection_power,
@@ -92,7 +76,11 @@ namespace SplinterlandsRObot.Game
                 NextMatchIn = SleepUntil,
                 ErrorMessage = ""
             });
-            WebSocket = new WebSocket(UserData.Username,UserDetails.token, this);
+            _webSocket = new WebsocketClient(new Uri(Constants.SPLINTERLANDS_WEBSOCKET_URL));
+            _webSocket.ReconnectTimeout = null;
+            _webSocket.MessageReceived.Subscribe(OnMessageReceived);
+            _webSocket.ReconnectionHappened.Subscribe(OnReconnectionHappened);
+            _webSocket.DisconnectionHappened.Subscribe(OnDisconnectionHappened);
         }
         #endregion
 
@@ -122,25 +110,24 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
-                if (!WebSocket.client.IsStarted)
+                if (!_webSocket.IsStarted)
                 {
-                    await WebSocket.WebsocketStart();
-                    WebSocket.transactions.RemoveAll(transaction => transaction.processed == true);
-                }
-                
-                if (refreshCards)
-                {
-                    UserCards = await SplinterlandsAPI.GetUserCardsCollection(UserData.Username, UserDetails.token);
-                    refreshCards = false;
+                    await WebsocketStart();
+                    _transactions.RemoveAll(transaction => transaction.processed == true);
                 }
 
-                if (reloadUser)
+                if ((DateTime.Now - LastLogin).TotalMinutes >= Settings.HOLD_CACHE_FOR)
                 {
-                    UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey);
-                    reloadUser = false;
+                    Logs.LogMessage($"{UserData.Username}: Refreshing user data.", Logs.LOG_ALERT, supress: true);
+                    UpdateUserDetails();
                 }
 
                 UserBalance.UpdateECR(UserDetails.balances);
+
+                if ((DateTime.Now - LastCardsRefresh).TotalMinutes >= Settings.HOLD_CACHE_FOR)
+                {
+                    await UpdatePlayerCards();
+                }
 
                 if (UserConfig.ClaimSPS && (DateTime.Now - LastAirdrop).TotalHours > UserConfig.CheckForAirdropEvery)
                     await new CollectSPS().ClaimSPS(UserData, UserDetails.token);
@@ -181,10 +168,22 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
-                if (UserConfig.LeagueAdvance) await AdvanceLeague();//Add ranked mode calculation
+                if (UserConfig.LeagueAdvance) await AdvanceLeague();
 
-                //UserDetails.current_season_player.earned_chests = season.CalculateEarnedChests((int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
-                //InstanceManager.UsersStatistics[botInstance].Season = season.GetSeasonProgress((int)UserDetails.current_season_player.earned_chests, (int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
+                if (UserConfig.BattleMode == "modern")
+                {
+                    UserDetails.current_modern_season_player.earned_chests = season.CalculateEarnedChests((int)UserDetails.current_modern_season_player.chest_tier, (int)UserDetails.current_modern_season_player.rshares);
+                }
+                else
+                {
+                    UserDetails.current_season_player.earned_chests = season.CalculateEarnedChests((int)UserDetails.current_season_player.chest_tier, (int)UserDetails.current_season_player.rshares);
+                }
+
+                InstanceManager.UsersStatistics[botInstance].Season = season.GetSeasonProgress(
+                    (UserConfig.BattleMode == "modern" ? (int)UserDetails.current_modern_season_player.earned_chests : (int)UserDetails.current_season_player.earned_chests),
+                    (UserConfig.BattleMode == "modern" ? (int)UserDetails.current_modern_season_player.chest_tier : (int)UserDetails.current_season_player.chest_tier),
+                    (UserConfig.BattleMode == "modern" ? (int)UserDetails.current_modern_season_player.rshares : (int)UserDetails.current_season_player.rshares)
+                    );
 
                 Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {UserBalance.ECR}%", supress: true);
 
@@ -194,7 +193,7 @@ namespace SplinterlandsRObot.Game
                     {
                         Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(UserBalance.ECR)}%/{UserConfig.EcrLimit}%] ", Logs.LOG_ALERT);
                         SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
-                        //await Task.Delay(1500); WHYYY?????
+                        await Task.Delay(1500);
                         if (UserConfig.WaitToRechargeEcr)
                         {
                             waitForECR = true;
@@ -529,6 +528,7 @@ namespace SplinterlandsRObot.Game
             }
             finally
             {
+                await WebsocketStop("UserBenched");
                 lock (_activeLock)
                 {
                     CurrentlyActive = false;
@@ -560,7 +560,7 @@ namespace SplinterlandsRObot.Game
         {
             if (UserDetails.current_season_player == null)
             {
-                reloadUser = true;
+                LastLogin = DateTime.MinValue;
             }
             else
             {
@@ -589,7 +589,7 @@ namespace SplinterlandsRObot.Game
         {
             if (UserDetails.current_season_player == null)
             {
-                reloadUser = true;
+                LastLogin = DateTime.MinValue;
             }
             else
             {
@@ -604,12 +604,6 @@ namespace SplinterlandsRObot.Game
             UserDetails.modern_rating = rating;
         }
 
-        internal void UpdateCollectionPower(int cp)
-        {
-            UserDetails.collection_power = cp;
-            refreshCards = true;
-            Logs.LogMessage($"{UserData.Username}: CP change detected, refreshing cards collection on next loop", Logs.LOG_ALERT);
-        }
         internal void UpdateBattleResults(int status, string winner)
         {
             string ratingUpdate = (UserConfig.BattleMode == "modern" ? lastModernRatingUpdate : lastRatingUpdate);
@@ -660,40 +654,34 @@ namespace SplinterlandsRObot.Game
             UserDetails.quest.rshares = rshares;
         }
 
-        internal void UpdateStakedSpsBalance(double spsp)
+        internal void UpdateUserDetails(int wait = 0)
         {
-            UserDetails.balances.Where(x=>x.token == "SPSP").First().balance = spsp;
-
+            UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey);
+            UserBalance = new UserBalance()
+            {
+                Credits = UserDetails.balances.Where(x => x.token == "CREDITS").Any() ? UserDetails.balances.Where(x => x.token == "CREDITS").First().balance : 0,
+                DEC = UserDetails.balances.Where(x => x.token == "DEC").Any() ? UserDetails.balances.Where(x => x.token == "DEC").First().balance : 0,
+                LegendaryPotions = UserDetails.balances.Where(x => x.token == "LEGENDARY").Any() ? (int)UserDetails.balances.Where(x => x.token == "LEGENDARY").First().balance : 0,
+                GoldPotions = UserDetails.balances.Where(x => x.token == "GOLD").Any() ? (int)UserDetails.balances.Where(x => x.token == "GOLD").First().balance : 0,
+                QuestPotions = UserDetails.balances.Where(x => x.token == "QUEST").Any() ? (int)UserDetails.balances.Where(x => x.token == "QUEST").First().balance : 0,
+                Packs = UserDetails.balances.Where(x => x.token == "CHAOS").Any() ? (int)UserDetails.balances.Where(x => x.token == "CHAOS").First().balance : 0,
+                Voucher = UserDetails.balances.Where(x => x.token == "VOUCHER").Any() ? UserDetails.balances.Where(x => x.token == "VOUCHER").First().balance : 0,
+                SPS = UserDetails.balances.Where(x => x.token == "SPS").Any() ? UserDetails.balances.Where(x => x.token == "SPS").First().balance : 0,
+                SPSP = UserDetails.balances.Where(x => x.token == "SPSP").Any() ? UserDetails.balances.Where(x => x.token == "SPSP").First().balance : 0,
+                ECR = 0
+            };
+            UserBalance.UpdateECR(UserDetails.balances);
+            LastLogin = DateTime.Now;
+            UserConfig = new Config(UserData.ConfigFile);
+            LastLogin = DateTime.Now;
+            Thread.Sleep((wait == 0 ? random.Next(1000, 3000) : wait));
         }
 
-        internal void UpdateCreditsBalance(double credits)
+        internal async Task UpdatePlayerCards()
         {
-            UserDetails.balances.Where(x => x.token == "CREDITS").First().balance = credits;
-        }
-
-        internal void UpdatePacksBalance(double packs)
-        {
-            UserDetails.balances.Where(x => x.token == "CHAOS").First().balance = packs;
-        }
-
-        internal void UpdateGoldPotionsBalance(double gPotions)
-        {
-            UserDetails.balances.Where(x => x.token == "GOLD").First().balance = gPotions;
-        }
-
-        internal void UpdateLegendaryPotionsBalance(double lPotions)
-        {
-            UserDetails.balances.Where(x => x.token == "LEGENDARY").First().balance = lPotions;
-        }
-
-        internal void UpdateSpsBalance(double sps)
-        {
-            UserDetails.balances.Where(x => x.token == "SPS").First().balance = sps;
-        }
-
-        internal void UpdateDecBalance(double dec)
-        {
-            UserDetails.balances.Where(x => x.token == "DEC").First().balance = dec;
+            UserCards = await SplinterlandsAPI.GetUserCardsCollection(UserData.Username, UserDetails.token);
+            LastCardsRefresh = DateTime.Now;
+            await Task.Delay(random.Next(1000, 3000));
         }
 
         internal void UpdateLastReward(double lastDec)
@@ -719,9 +707,9 @@ namespace SplinterlandsRObot.Game
             for (int i = 0; i < secondsToWait * 2; i++)
             {
                 await Task.Delay(500);
-                if (WebSocket.transactions.Where(x => x.message["data"]["trx_info"]["id"].ToString() == tx).Any())
+                if (_transactions.Where(x => x.message["data"]["trx_info"]["id"].ToString() == tx).Any())
                 {
-                    WebSocketTransactionMessage transaction = WebSocket.transactions.Where(x => x.message["data"]["trx_info"]["id"].ToString() == tx).First();
+                    WebSocketTransactionMessage transaction = _transactions.Where(x => x.message["data"]["trx_info"]["id"].ToString() == tx).First();
                     if ((bool)transaction.message["data"]["trx_info"]["success"])
                     {
                         return (true,transaction.message);
@@ -807,6 +795,7 @@ namespace SplinterlandsRObot.Game
                             UpdateModernRating((int)leagueData["modern_rating"]);
                         else
                             UpdateRating((int)leagueData["rating"]);
+                        LastLogin = DateTime.MinValue;
                         Logs.LogMessage($"{UserData.Username}: Advanced league: {tx}");
                     }
                 }
@@ -865,6 +854,193 @@ namespace SplinterlandsRObot.Game
             }
 
             return 0;
+        }
+        #endregion
+
+        #region WebSocket
+        public async Task WebsocketStart()
+        {
+            await _webSocket.Start();
+            WebsocketAuthenticate();
+            _ = WebsocketPing().ConfigureAwait(false);
+        }
+        private void WebsocketAuthenticate()
+        {
+            string sessionID = Helpers.RandomString(10);
+            string message = "{\"type\":\"auth\",\"player\":\"" + UserData.Username + "\",\"access_token\":\"" + UserDetails.token + "\",\"session_id\":\"" + sessionID + "\"}";
+            WebsocketSendMessage(message);
+        }
+        public void WebsocketSendMessage(string message)
+        {
+            _webSocket.Send(message);
+        }
+        public async Task WebsocketPing()
+        {
+            while (_webSocket.IsStarted)
+            {
+                try
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        await Task.Delay(20 * 1000);
+                        if (!_webSocket.IsStarted)
+                        {
+                            return;
+                        }
+                    }
+
+                    _webSocket.Send("{\"type\":\"ping\"}");
+                    Logs.LogMessage($"{UserData.Username}: ping", supress: true);
+                }
+                catch (Exception ex)
+                {
+                    Logs.LogMessage($"{UserData.Username}: Error pinging WebSocket { ex }", supress: true);
+                    await WebsocketStop("Ping Error");
+                }
+            }
+        }
+        public async Task WebsocketStop(string stopDescription)
+        {
+            await _webSocket.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, stopDescription);
+        }
+        public void WebsocketDispose()
+        {
+            _webSocket.Dispose();
+        }
+        private void OnMessageReceived(ResponseMessage message)
+        {
+            if (message.MessageType != System.Net.WebSockets.WebSocketMessageType.Text
+                || !message.Text.Contains("\"id\""))
+            {
+                return;
+            }
+            JToken json = JToken.Parse(message.Text);
+
+            Logs.LogMessage($"{UserData.Username}: WebMessage received: {json.ToString()}", Logs.LOG_INFO, supress: true);
+
+            string messageType = json["id"].ToString();
+
+            if (messageType == "transaction_complete")
+            {
+                _transactions.Add(new WebSocketTransactionMessage()
+                {
+                    message = json,
+                    processed = false
+                });
+            }
+            else if (messageType == "match_found")
+            {
+                UpdateMatchFound(true, json["data"]);
+            }
+            else if (messageType == "opponent_submit_team")
+            {
+                UpdateOpponentSubmitTeam(true);
+            }
+            else if (messageType == "rating_update")
+            {
+                if (json["data"].ToString().Contains("modern"))
+                {
+                    if (json["data"]["modern"].ToString().Contains("new_rating"))
+                    {
+                        UpdateModernRating((int)json["data"]["modern"]["new_rating"]);
+                    }
+                    if (json["data"]["modern"].ToString().Contains("new_league"))
+                    {
+                        UpdateModernLeague((int)json["data"]["modern"]["new_league"]);
+                    }
+                    if (json["data"]["modern"].ToString().Contains("new_max_league"))
+                    {
+                        UpdateModernMaxLeague((int)json["data"]["modern"]["new_max_league"]);
+                    }
+                    if (json["data"]["modern"].ToString().Contains("additional_season_rshares"))
+                    {
+                        UpdateModernSeasonRewardShares((int)json["data"]["modern"]["additional_season_rshares"]);
+                    }
+                }
+
+                if (json["data"].ToString().Contains("wild"))
+                {
+                    if (json["data"]["wild"].ToString().Contains("new_rating"))
+                    {
+                        UpdateRating((int)json["data"]["wild"]["new_rating"]);
+                    }
+                    if (json["data"]["wild"].ToString().Contains("new_league"))
+                    {
+                        UpdateLeague((int)json["data"]["wild"]["new_league"]);
+                    }
+                    if (json["data"]["wild"].ToString().Contains("new_max_league"))
+                    {
+                        UpdateMaxLeague((int)json["data"]["wild"]["new_max_league"]);
+                    }
+                    if (json["data"]["wild"].ToString().Contains("additional_season_rshares"))
+                    {
+                        UpdateSeasonRewardShares((int)json["data"]["wild"]["additional_season_rshares"]);
+                    }
+                }
+            }
+            else if (messageType == "ecr_update")
+            {
+                if (json["data"].ToString().Contains("capture_rate"))
+                {
+
+                    UpdateECR(
+                        new Balance()
+                        {
+                            balance = (double)json["data"]["capture_rate"],
+                            token = "ECR",
+                            last_reward_block = (int)json["data"]["last_reward_block"],
+                            last_reward_time = (DateTime)json["data"]["last_reward_time"]
+                        });
+                }
+            }
+            else if (messageType == "balance_update")
+            {
+                if (json["data"]["token"].ToString() == "DEC")
+                    if (json["data"]["type"].ToString() == "dec_reward")
+                        UpdateLastReward((double)json["data"]["amount"]);
+            }
+            else if (messageType == "quest_progress")
+            {
+                UpdateFocusInfo(
+                    (string)json["data"]["id"],
+                    (string)json["data"]["player"],
+                    (DateTime)json["data"]["created_date"],
+                    (int)json["data"]["created_block"],
+                    (string)json["data"]["name"],
+                    (int)json["data"]["total_items"],
+                    (int)json["data"]["completed_items"],
+                    (string?)json["data"]["claim_trx_id"],
+                    (DateTime?)json["data"]["claim_date"],
+                    (int)json["data"]["reward_qty"],
+                    (string?)json["data"]["refresh_trx_id"],
+                    (int)json["data"]["chest_tier"],
+                    (int)json["data"]["rshares"]
+                    );
+            }
+            else if (messageType == "battle_result")
+            {
+                UpdateBattleResults((int)json["data"]["status"], json["data"]["winner"].ToString());
+            }
+            else if (messageType == "received_gifts")
+            {
+                //ToDo
+            }
+            else
+            {
+                Logs.LogMessage($"{UserData.Username}: UNKNOWN Message received: {message.Text}", Logs.LOG_ALERT, true);
+            }
+        }
+        private void OnReconnectionHappened(ReconnectionInfo info)
+        {
+            Logs.LogMessage($"{UserData.Username}: Reconnection happened, type: {info.Type}", supress: true);
+        }
+        private void OnDisconnectionHappened(DisconnectionInfo disconnectionInfo)
+        {
+            if (disconnectionInfo.CloseStatusDescription != "UserBenched")
+            {
+                Logs.LogMessage($"{UserData.Username}: WebSocket disconnected: {disconnectionInfo.CloseStatusDescription}", Logs.LOG_WARNING, true);
+                WebsocketStart().ConfigureAwait(true);
+            }
         }
         #endregion
     }

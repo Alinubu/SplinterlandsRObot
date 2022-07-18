@@ -33,9 +33,9 @@ namespace SplinterlandsRObot.Hive
             UserDetails userDetails = JsonConvert.DeserializeObject<UserDetails>(response);
             if (userDetails == null)
             {
-                throw new Exception("Error at user login. No response received");
+                throw new Exception("Error loading user details. No response received");
             }
-            Logs.LogMessage($"{username}: Login OK", Logs.LOG_SUCCESS);
+            Logs.LogMessage($"{username}: User details loaded.", Logs.LOG_SUCCESS);
             Thread.Sleep(655);
             return userDetails;
         }

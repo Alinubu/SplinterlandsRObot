@@ -48,13 +48,13 @@ namespace SplinterlandsRObot.Models.Account
         public string RentFile { get; set; }
         public int MaxTriesPerAccount { get; set; }
         //Rent for focus
-        public bool RentForFocus { get; set; }
-        public string FireRentFile { get; set; }
-        public string WaterRentFile { get; set; }
-        public string EarthRentFile { get; set; }
-        public string LifeRentFile { get; set; }
-        public string DeathRentFile { get; set; }
-        public string DragonRentFile { get; set; }
+        //public bool RentForFocus { get; set; }
+        //public string FireRentFile { get; set; }
+        //public string WaterRentFile { get; set; }
+        //public string EarthRentFile { get; set; }
+        //public string LifeRentFile { get; set; }
+        //public string DeathRentFile { get; set; }
+        //public string DragonRentFile { get; set; }
         //Rent for Power
         public bool RentForPower { get; set; }
         public bool RentGoldCardsOnly { get; set; }
@@ -120,14 +120,14 @@ namespace SplinterlandsRObot.Models.Account
             PowerLimit = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/PowerLimit", false, "0"));
             BattleWhileRenting = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/BattleWhileRenting", false, "false"));
             DaysToRent = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DaysToRent", false, "1");
-            MaxTriesPerAccount = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/MaxTriesPerUser", false, "20"));
-            RentForFocus = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForFocus", false, "false"));
-            FireRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/FireRentFile", false, "");
-            WaterRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/WaterRentFile", false, "");
-            EarthRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/EarthRentFile", false, "");
-            LifeRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/LifeRentFile", false, "");
-            DeathRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DeathRentFile", false, "");
-            DragonRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DragonRentFile", false, "");
+            MaxTriesPerAccount = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/MaxTriesPerUser", false, "999999"));
+            //RentForFocus = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForFocus", false, "false"));
+            //FireRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/FireRentFile", false, "");
+            //WaterRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/WaterRentFile", false, "");
+            //EarthRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/EarthRentFile", false, "");
+            //LifeRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/LifeRentFile", false, "");
+            //DeathRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DeathRentFile", false, "");
+            //DragonRentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DragonRentFile", false, "");
             UseRentFile = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentSpecificCards", false, "false"));
             RentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentFile", false, "false");
             RentForPower = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForPower", false, "false"));

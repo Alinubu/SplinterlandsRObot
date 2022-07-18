@@ -45,16 +45,9 @@
 	  <PowerLimit>0</PowerLimit><!--Used by Rental Bot. When user CP is below limit it will be added to the renting queue-->
 	  <BattleWhileRenting>false</BattleWhileRenting><!--Accounts will continue to battle even if CP is below PowerLimit-->
 	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
-	  <MaxTriesPerUser>20</MaxTriesPerUser><!--Number of times it should try to rent the cards for one user before moving to the next one-->
+	  <MaxTriesPerUser>999999</MaxTriesPerUser><!--Number of times it should try to rent the cards for one user before moving to the next one-->
 	  <RentSpecificCards>false</RentSpecificCards><!--Will prioritize renting the cards setup in the rentConfig set for each user-->
 	  <RentFile>rentcards_example.xml</RentFile>
-	  <RentForFocus>false</RentForFocus><!--Rents specific cards for a focus, the list of cards must be specified for each splinter-->
-		<FireRentFile></FireRentFile>
-		<WaterRentFile></WaterRentFile>
-		<EarthRentFile></EarthRentFile>
-		<LifeRentFile></LifeRentFile>
-		<DeathRentFile></DeathRentFile>
-		<DragonRentFile></DragonRentFile>
 	  <RentForPower>false</RentForPower><!--Will rent any card that matches de configured parameters-->
 	  <RentGoldOnly>false</RentGoldOnly><!--When renting for Power, if enabled, bot will only check the gold cards-->
 	  <CPperDecLimit>250</CPperDecLimit><!--Set the minimum CP/DEC for renting-->
