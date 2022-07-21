@@ -14,7 +14,7 @@ namespace SplinterlandsRObot.Net
         /// <param name="UserAgent">Useragent to be used</param>
         /// <param name="Referer">Referer to be used</param>
         /// <returns>Returns the website sourcecode</returns>
-        public static string WebRequestPost(System.Net.CookieContainer CookieContainer, string PostData, string Url, string UserAgent, string Referer, Encoding responseEncoding, string proxy = "")
+        public static string WebRequestPost(string PostData, string Url, string proxy = "", string Referer = "")
         {
             string websiteResponse = "";
 
@@ -29,9 +29,9 @@ namespace SplinterlandsRObot.Net
                     webRequest.Proxy = new System.Net.WebProxy(proxyIP, proxyPort);
                 }
 
-                webRequest.CookieContainer = CookieContainer;
+                webRequest.CookieContainer = InstanceManager.CookieContainer;
                 webRequest.Method = "POST";
-                webRequest.UserAgent = UserAgent;
+                webRequest.UserAgent = Constants.USER_AGENT;
                 webRequest.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
                 webRequest.KeepAlive = true;
                 webRequest.AllowAutoRedirect = true;
@@ -49,7 +49,7 @@ namespace SplinterlandsRObot.Net
 
                 System.Net.HttpWebResponse webResponse = (System.Net.HttpWebResponse)webRequest.GetResponse();
 
-                System.IO.StreamReader streamReader = new System.IO.StreamReader(webResponse.GetResponseStream(), responseEncoding);
+                System.IO.StreamReader streamReader = new System.IO.StreamReader(webResponse.GetResponseStream(), Encoding.UTF8);
 
                 websiteResponse = streamReader.ReadToEnd();
 

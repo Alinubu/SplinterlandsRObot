@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Models;
-using SplinterlandsRObot.Extensions;
+using SplinterlandsRObot.Cards;
+using SplinterlandsRObot.Player;
+using SplinterlandsRObot.Models.Bot;
 using SplinterlandsRObot.Net;
 
 namespace SplinterlandsRObot.API
@@ -23,21 +24,21 @@ namespace SplinterlandsRObot.API
             }
             return Convert.ToBoolean(result);
         }
-        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool prioritizeFocus, bool usePrivateApi)
+        public async Task<JToken?> GetTeamFromAPI(JToken matchDetails, string questColor, bool questCompleted, CardsCollection playerCards, string user, int league, bool prioritizeFocus, Config config, bool usePrivateApi)
         {
 
             APIGetTeamPostData data = new APIGetTeamPostData()
             {
                 matchDetails = matchDetails,
-                questDetails = new JObject() { new JProperty("quest_color", questColor), new JProperty("quest_completed", questCompleted), new JProperty("do_quest", Settings.DO_QUESTS) },
+                questDetails = new JObject() { new JProperty("quest_color", questColor), new JProperty("quest_completed", questCompleted), new JProperty("do_quest", config.FocusEnabled) },
                 playerCards = playerCards,
-                preferredSummoners = Settings.PREFERRED_SUMMONERS,
+                preferredSummoners = config.PreferredSummoners,
                 username = user,
                 league = league,
-                replaceStarterCards = Settings.REPLACE_STARTER_CARDS,
-                useStarterCards = Settings.USE_STARTER_CARDS,
-                prioritizeFocus = prioritizeFocus
-
+                replaceStarterCards = config.ReplaceStarterCards,
+                useStarterCards = config.UseStarterCards,
+                prioritizeFocus = prioritizeFocus,
+                battleMode = config.BattleMode
             };
 
             Uri url = new Uri(String.Format(Settings.API_URL + (usePrivateApi ? BOT_PRIVATE_API_GET_TEAM : BOT_PUBLIC_API_GET_TEAM)));
@@ -57,17 +58,17 @@ namespace SplinterlandsRObot.API
             if (responseString.Contains("API Limit exceeded"))
             {
                 Logs.LogMessage($"{user}: Public api limit Reached", Logs.LOG_ALERT);
-                return null;
+                throw new Exception();
             }
             else if (responseString.Contains("Timeout, api overloaded"))
             {
                 Logs.LogMessage($"{user}: Api timout, contact support", Logs.LOG_WARNING);
-                return null;
+                throw new Exception();
             }
             else if (responseString.Contains("User not allowed to use Premium features. Please subscribe"))
             {
                 Logs.LogMessage($"{user}: User not allowed to use Premium features. Please subscribe", Logs.LOG_WARNING);
-                return null;
+                throw new Exception();
             }
 
             dynamic result = JValue.Parse(responseString);
@@ -96,37 +97,45 @@ namespace SplinterlandsRObot.API
 
         public async Task SyncUserStats(string passKey, CancellationToken token)
         {
-            while (!token.IsCancellationRequested)
+            InstanceManager.isStatsSyncRunning = true;
+            try
             {
-                await Task.Delay(300000, token);
-                APISyncStatsPostData data = new APISyncStatsPostData()
+                while (!token.IsCancellationRequested)
                 {
-                    PassKey = passKey,
-                    UserStats = InstanceManager.UsersStatistics.ToList()
-                };
+                    await Task.Delay(300000, token);
+                    APISyncStatsPostData data = new APISyncStatsPostData()
+                    {
+                        PassKey = passKey,
+                        UserStats = InstanceManager.UsersStatistics.ToList()
+                    };
 
-                Uri url = new Uri(String.Format(Settings.API_URL + BOT_STATS_SYNC));
+                    Uri url = new Uri(String.Format(Settings.API_URL + BOT_STATS_SYNC));
 
-                JObject obj = new JObject()
+                    JObject obj = new JObject()
                 {
                     new JProperty("json",JsonConvert.SerializeObject(data))
                 };
 
-                string json = JsonConvert.SerializeObject(obj);
+                    string json = JsonConvert.SerializeObject(obj);
 
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                var response = await HttpWebRequest.client.PostAsync(url, content);
+                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    var response = await HttpWebRequest.client.PostAsync(url, content);
 
-                string responseString = await response.Content.ReadAsStringAsync();
+                    string responseString = await response.Content.ReadAsStringAsync();
 
-                if (responseString.Contains("Error syncing stats"))
-                {
-                    Logs.LogMessage("[UserStatsSync]: Error syncing stats", Logs.LOG_ALERT);
+                    if (responseString.Contains("Error syncing stats"))
+                    {
+                        Logs.LogMessage("[UserStatsSync]: Error syncing stats", Logs.LOG_ALERT);
+                    }
+                    else
+                    {
+                        Logs.LogMessage("[UserStatsSync]: Sync completed.", supress: true);
+                    }
                 }
-                else
-                {
-                    Logs.LogMessage("[UserStatsSync]: Sync completed.", supress: true);
-                }
+            }
+            catch (Exception ex)
+            {
+                InstanceManager.isStatsSyncRunning = false;
             }
         }
     }

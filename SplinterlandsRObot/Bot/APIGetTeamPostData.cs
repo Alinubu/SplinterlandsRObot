@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json.Linq;
+using SplinterlandsRObot.Cards;
+using SplinterlandsRObot.Player;
 
-namespace SplinterlandsRObot.Models
+namespace SplinterlandsRObot.Models.Bot
 {
     public class APIGetTeamPostData
     {
@@ -14,5 +16,6 @@ namespace SplinterlandsRObot.Models
         public bool replaceStarterCards { get; set; }
         public bool useStarterCards { get; set; }
         public bool prioritizeFocus { get; set; }
+        public string battleMode { get; set; }
     }
 }

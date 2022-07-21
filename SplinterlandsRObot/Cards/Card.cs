@@ -1,11 +1,11 @@
-﻿namespace SplinterlandsRObot.Models
-{
-    public class CardsCollection
-    {
-        public string player { get; set; }
-        public List<Card> cards { get; set; }
-    }
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
+namespace SplinterlandsRObot.Cards
+{
     public class Card
     {
         public string player { get; set; }
