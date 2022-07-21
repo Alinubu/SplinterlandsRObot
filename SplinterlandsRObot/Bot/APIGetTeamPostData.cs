@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Models.Account;
+using SplinterlandsRObot.Cards;
+using SplinterlandsRObot.Player;
 
 namespace SplinterlandsRObot.Models.Bot
 {

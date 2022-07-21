@@ -1,10 +1,17 @@
-﻿Version 1.1.5
+﻿Version 1.1.6
 
 Changes:
-    - Removed API calls from Splinterlands to improve threads stability
-    - Add config file change detection and update configs without restarting the bot
-    - Update configs to be at user level
-    - Auto assets transfer on claim quest
-    - Focus renting is now supported
-    - Renting will now group multiple cards into one transaction
-    - Added support for Modern format
+    - Added back some API calls to prevent the error with battles and user data from version 1.1.5
+    - Changed config file change detection to not spam with logs in the console
+    - Removed RentingForFocus
+    - Added a 5 minutes sleep when Splinterlands is not processing rent transaction to prevent a card to be rented multiple times
+    - Added a 5 minutes sleep for possible softbans errors;
+    - Adjusted renting to reduce the chances of getting a softban
+    - Overall code improvements to prevent/fix error that were encountered in version 1.1.5
+    - Season chests have been added to the Stats table in the console
+    - Fixed a bug that would start renew renting processes in parallel 
+    - Added counter for season chests in Stats table
+    - Updated focus rewards log to display Merits
+    - Options in settings.xml can be changed with console commands
+        DO_BATTLE=true/false
+        DEBUG_MODE=true/false

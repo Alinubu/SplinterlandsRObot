@@ -1,10 +1,5 @@
-﻿using Cryptography.ECDSA;
-using HiveAPI.CS;
-using System.Text;
-using System.Xml;
-using SplinterlandsRObot.Models.Account;
-using SplinterlandsRObot.Hive;
-using SplinterlandsRObot.API;
+﻿using System.Xml;
+using SplinterlandsRObot.Player;
 using SplinterlandsRObot.Global;
 
 namespace SplinterlandsRObot
@@ -34,32 +29,6 @@ namespace SplinterlandsRObot
             }
 
             return userList;
-        }
-
-        
-        internal int GetCardEdition(string editionDescription)
-        {
-            switch (editionDescription.ToLower())
-            {
-                case "alpha":
-                    return 0;
-                case "beta":
-                    return 1;
-                case "promo":
-                    return 2;
-                case "reward":
-                    return 3;
-                case "untamed":
-                    return 4;
-                case "dice":
-                    return 5;
-                case "gladius":
-                    return 6;
-                case "chaos legion":
-                    return 7;
-                default:
-                    return -1;
-            }
         }
     }
 }

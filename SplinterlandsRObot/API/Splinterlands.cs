@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SplinterlandsRObot.Cards;
 using SplinterlandsRObot.Models;
-using SplinterlandsRObot.Models.Account;
+using SplinterlandsRObot.Player;
 using SplinterlandsRObot.Models.Splinterlands;
 using SplinterlandsRObot.Net;
 
@@ -67,40 +68,6 @@ namespace SplinterlandsRObot.API
             }
             return result;
         }
-        public async Task<QuestData> GetQuestData(string username)
-        {
-            string result = "";
-            QuestData data = new QuestData();
-
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_QUEST_DATA + username);
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
-
-            if (!result.Contains("id"))
-                return null;
-
-            dynamic json = JValue.Parse(result);
-
-            data.chest_tier = json[0]["chest_tier"];
-            data.claim_date = json[0]["claim_date"];
-            data.claim_trx_id = json[0]["claim_trx_id"];
-            data.completed_items = json[0]["completed_items"];
-            data.created_block = json[0]["created_block"];
-            data.created_date = json[0]["created_date"];
-            data.id = json[0]["id"];
-            data.league = json[0]["league"];
-            data.name = json[0]["name"];
-            data.player = json[0]["player"];
-            data.refresh_trx_id = json[0]["refresh_trx_id"];
-            data.reward_qty = json[0]["reward_qty"];
-            data.rewards = null;
-            data.rshares = json[0]["rshares"];
-            data.total_items = json[0]["total_items"];
-            
-            return data;
-        }
         public async Task<CardsCollection> GetUserCardsCollection(string username, string accessToken)
         {
             string result = "";
@@ -109,6 +76,10 @@ namespace SplinterlandsRObot.API
             if (response.IsSuccessStatusCode)
             {
                 result = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                throw new Exception("Error getting the cards collection for the user");
             }
             await Task.Delay(500);
 
@@ -135,6 +106,7 @@ namespace SplinterlandsRObot.API
             {
                 result = await response.Content.ReadAsStringAsync();
             }
+            else result = null;
 
             return result;
         }
@@ -148,12 +120,12 @@ namespace SplinterlandsRObot.API
             }
             return result;
         }
-        public async Task<UserBalance> GetPlayerBalancesAsync(string username)
+        public async Task<Balances> GetPlayerBalancesAsync(string username)
         {
             string result = "";
             JToken defaultValue = new JObject(
                 new JProperty("balance", 0));
-            UserBalance balance = new();
+            Balances balance = new();
             HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_PlAYER_BALANCE + username);
             if (response.IsSuccessStatusCode)
             {

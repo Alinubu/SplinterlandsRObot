@@ -2,12 +2,13 @@
 using HiveAPI.CS;
 using static HiveAPI.CS.CHived;
 using SplinterlandsRObot.Net;
-using SplinterlandsRObot.Models.Account;
+using SplinterlandsRObot.Player;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Cryptography.ECDSA;
 using SplinterlandsRObot.API;
 using SplinterlandsRObot.Global;
+using SplinterlandsRObot.Cards;
 
 namespace SplinterlandsRObot.Hive
 {
@@ -15,7 +16,7 @@ namespace SplinterlandsRObot.Hive
     {
         CHived hive = new CHived(InstanceManager.HttpClient, Settings.HIVE_NODE);
         private object lk = new();
-        public UserDetails GetUserDetails(string username, string postingkey)
+        public async Task<UserDetails> GetUserDetails(string username, string postingkey)
         {
             HiveActions hive = new();
             Splinterlands sp_api = new();
@@ -25,7 +26,7 @@ namespace SplinterlandsRObot.Hive
             var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(username + ts));
             var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(postingkey));
             var signature = Hex.ToString(sig);
-            var response = sp_api.GetUserAccesToken(username, bid, sid, signature, ts).Result;
+            var response = await sp_api.GetUserAccesToken(username, bid, sid, signature, ts);
             if (response.Contains("Incorrect username / password combination"))
             {
                 throw new Exception("Invalid username or posting key in users.xml");
@@ -35,7 +36,6 @@ namespace SplinterlandsRObot.Hive
             {
                 throw new Exception("Error loading user details. No response received");
             }
-            Logs.LogMessage($"{username}: User details loaded.", Logs.LOG_SUCCESS);
             Thread.Sleep(655);
             return userDetails;
         }

@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SplinterlandsRObot.Models;
-using SplinterlandsRObot.Models.Account;
+using SplinterlandsRObot.Cards;
+using SplinterlandsRObot.Player;
 using SplinterlandsRObot.Models.Bot;
 using SplinterlandsRObot.Net;
 

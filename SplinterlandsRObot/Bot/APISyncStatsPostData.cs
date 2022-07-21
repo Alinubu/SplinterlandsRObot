@@ -1,4 +1,4 @@
-﻿using SplinterlandsRObot.Models.Account;
+﻿using SplinterlandsRObot.Player;
 
 namespace SplinterlandsRObot.Models.Bot
 {

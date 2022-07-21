@@ -30,6 +30,33 @@ namespace SplinterlandsRObot.Global
             }
             return defaultValue;
         }
+        public static string GetMachineIdentifier()
+        {
+            string fileName = "passkey.txt";
+            string id = "";
+            if (File.Exists(fileName))
+            {
+                id = File.ReadLines(fileName).First();
+            }
+
+            if (id != "")
+                return id;
+
+            id = GenerateMD5Hash(
+                Environment.CurrentDirectory +
+                Environment.MachineName +
+                Environment.OSVersion +
+                Environment.WorkingSet +
+                Environment.UserName +
+                Environment.ProcessorCount +
+                Environment.SystemPageSize +
+                DateTime.Now.ToBinary() +
+                Helpers.RandomString(20));
+
+            File.AppendAllText(fileName, id);
+
+            return id;
+        }
         public static string RandomString(int length)
         {
             const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -58,6 +85,30 @@ namespace SplinterlandsRObot.Global
                     sb.Append(hashBytes[i].ToString("x2"));
                 }
                 return sb.ToString();
+            }
+        }
+        internal static int GetCardEdition(string editionDescription)
+        {
+            switch (editionDescription.ToLower())
+            {
+                case "alpha":
+                    return 0;
+                case "beta":
+                    return 1;
+                case "promo":
+                    return 2;
+                case "reward":
+                    return 3;
+                case "untamed":
+                    return 4;
+                case "dice":
+                    return 5;
+                case "gladius":
+                    return 6;
+                case "chaos legion":
+                    return 7;
+                default:
+                    return -1;
             }
         }
     }

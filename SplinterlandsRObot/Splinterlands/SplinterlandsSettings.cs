@@ -124,7 +124,7 @@
         public int reduction_pct { get; set; }
         public int pool_size_blocks { get; set; }
         public double ecr_regen_rate { get; set; }
-        public double ecr_reduction_rate { get; set; }
+        public object? ecr_reduction_rate { get; set; }
         public double alpha_bonus { get; set; }
         public double gold_bonus { get; set; }
         public double streak_bonus { get; set; }

@@ -10,7 +10,7 @@
   <League>
 	<AdvanceToNext>true</AdvanceToNext><!--Bot will advance user to a higher league (Bronze->Silver, Silver->Gold)-->
 	<AdvanceRatingThreshold>100</AdvanceRatingThreshold><!--Set a threshold for the rating to be above the league limit before the bot will advance to the next one-->
-	<MaxLeague>0</MaxLeague><!--Offers the option to advance until a specific league. Options: 0(Disabled) 4(Silver) 7(Gold) 10(Diamond) 13(Champion)-->
+	<MaxLeague>0</MaxLeague><!--Offers the option to advance until a specific league. Options: 0(Disabled) 1(Bronze) 4(Silver) 7(Gold) 10(Diamond) 13(Champion)-->
   </League>
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->

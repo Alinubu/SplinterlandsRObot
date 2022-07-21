@@ -1,9 +1,9 @@
-﻿namespace SplinterlandsRObot.Models.Account
+﻿namespace SplinterlandsRObot.Player
 {
     public class UserStats
     {
         public string Account { get; set; }
-        public UserBalance? Balance { get; set; }
+        public Balances? Balance { get; set; }
         public double? RentCost { get; set; }
         public int? Wins { get; set; }
         public int? Draws { get; set; }

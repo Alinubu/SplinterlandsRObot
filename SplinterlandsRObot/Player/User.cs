@@ -1,4 +1,4 @@
-﻿namespace SplinterlandsRObot.Models.Account
+﻿namespace SplinterlandsRObot.Player
 {
     public class User
     {
