@@ -29,6 +29,9 @@
 	  <Dragon>-1</Dragon>
 	</SplinterFocusOverride>
   </Quests>
+  <Season>
+	<AutoClaimSeasonRewards>false</AutoClaimSeasonRewards><!--Automatically claims the season rewards once available-->
+  </Season>
   <Cards>
 	<PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
 	<ReplaceStarterCards>true</ReplaceStarterCards><!--Will try to replace starter cards in the given team with similar owned cards-->
@@ -58,6 +61,7 @@
 	<TransferBot>
 	  <MainAccount>YourMainUser</MainAccount><!--The main account you want the assets to be transfered to-->
 	  <AutoTransferAfterFocusClaim>false</AutoTransferAfterFocusClaim><!--The assets transfer will be triggered for a user after claiming the focus rewards-->
+	  <AutoTransferAfterSeasonClaim>false</AutoTransferAfterSeasonClaim><!--The assets transfer will be triggered for a user after claiming the season rewards-->
 	  <TransferCards>false</TransferCards><!--Will transfer all user Cards, if you want some cards to not be transfered, you need to lock them-->
 	  <TransferDec>false</TransferDec><!--Will transfer DEC currency to main account-->
 	  <KeepDecAmount>15</KeepDecAmount><!--The amount of DEC you want to keed for one account-->

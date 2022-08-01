@@ -25,6 +25,15 @@ namespace SplinterlandsRObot.API
         const string SP_ACCESS_TOKEN = "/players/login?name=@@_username_@@&ref=&browser_id=@@_bid_@@&session_id=@@_sid_@@&sig=@@_signature_@@&ts=@@_timestamp_@@";
         const string SP_SPLINTERLANDS_CARDS = "/cards/get_details";
         const string SP_SPLINTERLANDS_SETTINGS = "/settings";
+        HttpClient client = new HttpClient();
+
+        public Splinterlands()
+        {
+            client.DefaultRequestHeaders.Add("origin", "https://splinterlands.com");
+            client.DefaultRequestHeaders.Add("referer", "https://splinterlands.com");
+            client.DefaultRequestHeaders.Add("accept", "application/json, text/plain, */*");
+            client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36");
+        }
 
         public async Task<List<SplinterlandsCard>> GetSplinterlandsCards()
         {
@@ -61,7 +70,7 @@ namespace SplinterlandsRObot.API
         public async Task<string> GetUserAccesToken(string username, string bid, string sid, string signature, string ts)
         {
             string result = "";
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_ACCESS_TOKEN.Replace("@@_username_@@", username).Replace("@@_bid_@@", bid).Replace("@@_sid_@@", sid).Replace("@@_signature_@@", signature).Replace("@@_timestamp_@@",ts));
+            HttpResponseMessage response = await client.GetAsync(API_URL + SP_ACCESS_TOKEN.Replace("@@_username_@@", username).Replace("@@_bid_@@", bid).Replace("@@_sid_@@", sid).Replace("@@_signature_@@", signature).Replace("@@_timestamp_@@",ts));
             if (response.IsSuccessStatusCode)
             {
                 result = await response.Content.ReadAsStringAsync();
@@ -72,7 +81,7 @@ namespace SplinterlandsRObot.API
         {
             string result = "";
             string ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_CARDS_COLLECTION.Replace("@@_username_@@", username).Replace("@@_timestamp_@@", ts).Replace("@@_accessToken_@@", accessToken));
+            HttpResponseMessage response = await client.GetAsync(API_URL + SP_CARDS_COLLECTION.Replace("@@_username_@@", username).Replace("@@_timestamp_@@", ts).Replace("@@_accessToken_@@", accessToken));
             if (response.IsSuccessStatusCode)
             {
                 result = await response.Content.ReadAsStringAsync();

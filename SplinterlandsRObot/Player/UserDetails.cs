@@ -46,6 +46,10 @@ namespace SplinterlandsRObot.Player
     }
     public class SeasonReward
     {
+        public int? chest_tier { get; set; }
+        public string? format { get; set; }
+        public int? max_league { get; set; }
         public int reward_packs { get; set; }
+        public int? season { get; set; }
     }
 }
