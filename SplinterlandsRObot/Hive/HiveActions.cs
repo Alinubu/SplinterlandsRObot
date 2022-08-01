@@ -9,6 +9,7 @@ using Cryptography.ECDSA;
 using SplinterlandsRObot.API;
 using SplinterlandsRObot.Global;
 using SplinterlandsRObot.Cards;
+using SplinterlandsRObot.Extensions;
 
 namespace SplinterlandsRObot.Hive
 {
@@ -209,66 +210,61 @@ namespace SplinterlandsRObot.Hive
             return customJsonOperation;
         }
 
-        public async Task ClaimSeasonRewards()
+        public async Task ClaimSeasonRewards(User? _user = null, int? _season = null, Config? _config = null)
         {
-            Splinterlands sp_api = new();
             try
-            {
-                foreach (User user in InstanceManager.userList)
+            {   
+                if (_user == null)
                 {
-                    Logs.LogMessage($"[Season Rewards] {user.Username}: Checking for season rewards... ", supress: true);
-                    var bid = "bid_" + Helpers.RandomString(20);
-                    var sid = "sid_" + Helpers.RandomString(20);
-                    var ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
-                    var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(user.Username + ts));
-                    var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(user.Keys.PostingKey));
-                    var signature = Hex.ToString(sig);
-                    var response = await sp_api.GetSeasonDetails(user.Username, bid, sid, signature, ts);
+                    foreach (User user in InstanceManager.userList)
+                    {
+                        Logs.LogMessage($"[Season Rewards] {user.Username}: Checking for season rewards... ", supress: true);
+                        var bid = "bid_" + Helpers.RandomString(20);
+                        var sid = "sid_" + Helpers.RandomString(20);
+                        var ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
+                        var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(user.Username + ts));
+                        var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(user.Keys.PostingKey));
+                        var signature = Hex.ToString(sig);
+                        UserDetails response = await GetUserDetails(user.Username, user.Keys.PostingKey);
 
-                    var seasonReward = Helpers.DoQuickRegex("\"season_reward\":(.*?)},\"", response);
-                    if (seasonReward == "{\"reward_packs\":0")
-                    {
-                        Logs.LogMessage($"{user.Username}: No season reward available!", Logs.LOG_ALERT, true);
-                    }
-                    else
-                    {
-                        var season = Helpers.DoQuickRegex("\"season\":(.*?),\"", seasonReward);
-                        if (season.Length <= 1)
+                        if (response.season_reward is null)
                         {
                             Logs.LogMessage($"{user.Username}: Error at claiming season rewards: Could not read season!", Logs.LOG_WARNING);
+                            continue;
                         }
+
+                        if (response.season_reward.reward_packs == 0)
+                            Logs.LogMessage($"{user.Username}: No season reward available!", Logs.LOG_ALERT);
                         else
                         {
-                            Logs.LogMessage($"{user.Username}: Season rewards available.", Logs.LOG_ALERT);
-                            string n = Helpers.RandomString(10);
-                            string json = "{\"type\":\"league_season\",\"season\":\"" + season + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
-
-                            COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_claim_reward", json);
-
-                            CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
-                            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
-                            
-                            await Task.Delay(15000);
-                            var rewardsRaw = await sp_api.GetTransactionDetails(tx);
-                            if (rewardsRaw.Contains(" not found"))
+                            if (response.season_reward.season is not null)
                             {
-                                continue;
-                            }
-                            else if (rewardsRaw.Contains("has already claimed their rewards from the specified season"))
-                            {
-                                Logs.LogMessage($"[Season Rewards] {user.Username}: Rewards already claimed!", Logs.LOG_ALERT);
-                            }
-                            var rewards = JToken.Parse(rewardsRaw)["trx_info"]["result"];
+                                if (await SendSeasonClaimTransaction(user, (int)response.season_reward.season))
+                                {
+                                    Config config = InstanceManager.BotInstances.Where(x => x.UserData.Username == user.Username).First().UserConfig;
 
-
-                            if (!((string)rewards).Contains("success\":true"))
-                            {
-                                Logs.LogMessage($"[Season Rewards] {user.Username}: Error at claiming season rewards: " + (string)rewards, Logs.LOG_WARNING);
+                                    if (config is not null)
+                                    {
+                                        if (config.AutoTransferAfterSeasonClaim)
+                                        {
+                                            await new TransferAssets().TransferAssetsAsync(user);
+                                        }
+                                    }
+                                }
 
                             }
-                            else if (((string)rewards).Contains("success\":true"))
+                        }
+                    }
+                }
+                else
+                {
+                    if (await SendSeasonClaimTransaction(_user, (int)_season))
+                    {
+                        if (_config is not null)
+                        {
+                            if (_config.AutoTransferAfterSeasonClaim)
                             {
-                                Logs.LogMessage($"[Season Rewards] {user.Username}: Successfully claimed season rewards!", Logs.LOG_SUCCESS);
+                                await new TransferAssets().TransferAssetsAsync(_user);
                             }
                         }
                     }
@@ -278,6 +274,44 @@ namespace SplinterlandsRObot.Hive
             {
                 Logs.LogMessage($"[Season Rewards] Error at claiming season reward: {ex.Message}", Logs.LOG_WARNING);
             }
+        }
+
+        public async Task<bool> SendSeasonClaimTransaction(User user, int season)
+        {
+            Splinterlands sp_api = new();
+            Logs.LogMessage($"{user.Username}: Season rewards available.", Logs.LOG_ALERT);
+            string n = Helpers.RandomString(10);
+            string json = "{\"type\":\"league_season\",\"season\":\"" + season + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
+
+            COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_claim_reward", json);
+
+            CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
+            string tx = hive.broadcast_transaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
+
+            await Task.Delay(15000);
+            var rewardsRaw = await sp_api.GetTransactionDetails(tx);
+            if (rewardsRaw.Contains(" not found"))
+            {
+                return false;
+            }
+            else if (rewardsRaw.Contains("has already claimed their rewards from the specified season"))
+            {
+                Logs.LogMessage($"[Season Rewards] {user.Username}: Rewards already claimed!", Logs.LOG_ALERT);
+            }
+            var rewards = JToken.Parse(rewardsRaw)["trx_info"]["result"];
+
+
+            if (!((string)rewards).Contains("success\":true"))
+            {
+                Logs.LogMessage($"[Season Rewards] {user.Username}: Error at claiming season rewards: " + (string)rewards, Logs.LOG_WARNING);
+
+            }
+            else if (((string)rewards).Contains("success\":true"))
+            {
+                Logs.LogMessage($"[Season Rewards] {user.Username}: Successfully claimed season rewards!", Logs.LOG_SUCCESS);
+                return true;
+            }
+            return false;
         }
 
         private string GetStringForSplinterlandsAPI(CtransactionData oTransaction)

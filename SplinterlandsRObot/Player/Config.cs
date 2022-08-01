@@ -28,6 +28,8 @@ namespace SplinterlandsRObot.Player
         public double FocusRateLife { get; set; }
         public double FocusRateDeath { get; set; }
         public double FocusRateDragon { get; set; }
+        //Season
+        public bool AutoClaimSeasonRewards { get; set; }
         //Cards
         public string PreferredSummoners { get; set; }
         public bool ReplaceStarterCards { get; set; }
@@ -57,6 +59,7 @@ namespace SplinterlandsRObot.Player
         //Assets transfer
         public string MainAccount { get; set; }
         public bool AutoTransferAfterFocusClaim { get; set; }
+        public bool AutoTransferAfterSeasonClaim { get; set; }
         public bool TransferCards { get; set; }
         public bool TransferDEC { get; set; }
         public double KeepDecAmount { get; set; }
@@ -100,6 +103,7 @@ namespace SplinterlandsRObot.Player
             ClaimFocusChests = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ClaimRewards", false, "true"));
             AvoidFocus = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/AvoidQuests/Enabled", false, "false"));
             FocusBlacklist = Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList", false, "none") != "none" ? Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList").Split(';') : new string[0];
+            AutoClaimSeasonRewards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Season/AutoClaimSeasonRewards", false, "false"));
             PreferredSummoners = Helpers.ReadNode(rootNode, "Cards/PreferredSummoners", false, "");
             ReplaceStarterCards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Cards/ReplaceStarterCards", false, "true"));
             UseStarterCards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Cards/UseStarterCards", false, "true"));
@@ -120,6 +124,7 @@ namespace SplinterlandsRObot.Player
             RenewHoursBeforeEnding = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RenewHoursBeforeEnding", false, "2"));
             MainAccount = Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/MainAccount", false, "YourMainUser");
             AutoTransferAfterFocusClaim = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/AutoTransferAfterFocusClaim", false, "false"));
+            AutoTransferAfterSeasonClaim = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/AutoTransferAfterSeasonClaim", false, "false"));
             TransferCards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferCards", false, "false"));
             TransferDEC = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferDec", false, "false"));
             KeepDecAmount = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/KeepDecAmount", false, "15"));

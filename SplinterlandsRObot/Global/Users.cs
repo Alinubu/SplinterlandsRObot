@@ -8,11 +8,10 @@ namespace SplinterlandsRObot
     {
         public List<User> GetUsers()
         {
-            Logs.LogMessage("Loading users data, this may take a while...");
             XmlDocument doc = new XmlDocument();
             doc.Load(Path.Combine(Environment.CurrentDirectory, Constants.CONFIG_FOLDER, "users.xml"));
             List<User> userList = new();
-
+            int i = 0;
             foreach (XmlNode node in doc.DocumentElement.SelectNodes("user"))
             {
                 userList.Add(
@@ -26,7 +25,10 @@ namespace SplinterlandsRObot
                         },
                         ConfigFile = Helpers.ReadNode(node, "ConfigFile", false, "config.xml")
                     });
+                i++;
             }
+
+            Logs.LogMessage($"Loaded {i} users.");
 
             return userList;
         }

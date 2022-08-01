@@ -19,13 +19,12 @@ namespace SplinterlandsRObot.Game
     {
         #region BotInstance Constructor
         private readonly object _activeLock = new();
-        private bool isFirstRun { get; set; }
         public bool CurrentlyActive { get; set; }
         private int InstanceIndex { get; set; }
         public User UserData { get; set; }
         public Config UserConfig { get; set; }
         public UserDetails UserDetails = new();
-        private Balances UserBalance = new();
+        public Balances UserBalance = new();
         private CardsCollection UserCards = new();
         private BattleState BattleState = new();
         private HiveActions HiveActions = new();
@@ -50,10 +49,9 @@ namespace SplinterlandsRObot.Game
 
         public BotInstance(User user, int instanceIndex)
         {
-            isFirstRun = true;
             UserData = user;
             InstanceIndex = instanceIndex;
-            UpdateUserDetails(725);
+            //UpdateUserDetails(725);
             InstanceManager.UsersStatistics.Add(new UserStats()
             {
                 Account = UserData.Username,
@@ -64,12 +62,10 @@ namespace SplinterlandsRObot.Game
                 Losses = 0,
                 MatchRewards = 0,
                 TotalRewards = 0,
-                Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating),
+                Rating = 0,
                 RatingChange = "",
-                League = UserConfig.BattleMode == "modern" ?
-                                    SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
-                                    : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name,
-                CollectionPower = UserDetails.collection_power,
+                League = "",
+                CollectionPower = 0,
                 Quest = "",
                 HoursUntilNextQuest = "N/A",
                 NextMatchIn = SleepUntil,
@@ -80,7 +76,7 @@ namespace SplinterlandsRObot.Game
             _webSocket.MessageReceived.Subscribe(OnMessageReceived);
             _webSocket.ReconnectionHappened.Subscribe(OnReconnectionHappened);
             _webSocket.DisconnectionHappened.Subscribe(OnDisconnectionHappened);
-            Logs.LogMessage($"{UserData.Username}: User details loaded.", Logs.LOG_SUCCESS);
+            //Logs.LogMessage($"{UserData.Username}: User details loaded.", Logs.LOG_SUCCESS);
         }
         #endregion
 
@@ -110,23 +106,34 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
+                Logs.LogMessage($"{UserData.Username}: Refreshing user data.", Logs.LOG_ALERT, supress: true);
+                if (!UpdateUserDetails())
+                    return SleepUntil;
+
                 if (!_webSocket.IsStarted)
                 {
                     await WebsocketStart();
                     _transactions.Clear();
                 }
 
-                if (!isFirstRun)
-                {
-                    Logs.LogMessage($"{UserData.Username}: Refreshing user data.", Logs.LOG_ALERT, supress: true);
-                    UpdateUserDetails();
-                }
-                else isFirstRun = false;
-
                 UserBalance.UpdateECR(UserDetails.balances);
 
                 if (UserConfig.ClaimSPS && (DateTime.Now - LastAirdrop).TotalHours > UserConfig.CheckForAirdropEvery)
                     await new CollectSPS().ClaimSPS(UserData, UserDetails.token);
+
+                if (UserConfig.AutoClaimSeasonRewards)
+                {
+                    if (UserDetails.season_reward is not null)
+                    {
+                        if (UserDetails.season_reward.reward_packs > 0)
+                        {
+                            if (UserDetails.season_reward.season is not null)
+                            {
+                                await HiveActions.ClaimSeasonRewards(UserData, UserDetails.season_reward.season, UserConfig);
+                            }
+                        }
+                    }
+                }
 
                 if (UserConfig.EnableRentals)
                 {
@@ -571,10 +578,11 @@ namespace SplinterlandsRObot.Game
             UserDetails.quest.rshares = rshares;
         }
 
-        internal void UpdateUserDetails(int wait = 0)
+        public bool UpdateUserDetails(int wait = 0)
         {
             try
             {
+                Thread.Sleep((wait == 0 ? random.Next(1000, 3000) : wait));
                 UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey).Result;
                 UserBalance = new Balances()
                 {
@@ -589,15 +597,22 @@ namespace SplinterlandsRObot.Game
                     SPSP = UserDetails.balances.Where(x => x.token == "SPSP").Any() ? UserDetails.balances.Where(x => x.token == "SPSP").First().balance : 0,
                     ECR = 0
                 };
+                
                 UserBalance.UpdateECR(UserDetails.balances);
                 UserConfig = new Config(UserData.ConfigFile);
-                Thread.Sleep((wait == 0 ? random.Next(1000, 3000) : wait));
+                InstanceManager.UsersStatistics[InstanceIndex].Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating);
+                InstanceManager.UsersStatistics[InstanceIndex].League = UserConfig.BattleMode == "modern" ?
+                                    SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
+                                    : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name;
+                InstanceManager.UsersStatistics[InstanceIndex].CollectionPower = UserDetails.collection_power;
             }
             catch (Exception ex)
             {
                 Logs.LogMessage($"{UserData.Username}: {ex.Message}. Skipping account for 5 minutes", Logs.LOG_WARNING);
                 SleepUntil = DateTime.Now.AddMinutes(5);
+                return false;
             }
+            return true;
         }
 
         internal async Task UpdatePlayerCards()
