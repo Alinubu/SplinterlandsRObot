@@ -72,11 +72,25 @@ namespace SplinterlandsRObot
                 lock (_TaskLock)
                 {
                     if (!isRentingServiceRunning)
+                    {
                         _ = Task.Run(async () => await RentProcess.StartRentingProcess(token).ConfigureAwait(false));
+                        isRentingServiceRunning = true;
+                        Task.Delay(1500);
+                    }
+
                     if (!isRenewRentingServiceRunning)
+                    {
                         _ = Task.Run(async () => await RentProcess.RenewRentals()).ConfigureAwait(false);
+                        isRenewRentingServiceRunning = true;
+                        Task.Delay(1500);
+                    }
+
                     if (!isStatsSyncRunning)
+                    {
                         _ = Task.Run(async () => await new Bot().SyncUserStats(identifier, token).ConfigureAwait(false));
+                        isStatsSyncRunning = true;
+                        Task.Delay(1500);
+                    }
                 }
 
                 while (instances.Count < Settings.MAX_THREADS && !token.IsCancellationRequested)

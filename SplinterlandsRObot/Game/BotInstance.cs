@@ -27,14 +27,13 @@ namespace SplinterlandsRObot.Game
         public Balances UserBalance = new();
         private CardsCollection UserCards = new();
         private BattleState BattleState = new();
-        private HiveActions HiveActions = new();
+        private HiveService HiveService = new();
+        private BattleService BattleService = new();
         private Splinterlands SplinterlandsAPI = new();
         private Bot BotAPI = new();
         private WebsocketClient _webSocket { get; set; }
         public List<JToken> _transactions = new();
         private Random random = new Random();
-
-        private DateTime LastAirdrop = DateTime.MinValue;
         private bool waitForECR = false;
         private bool focusCompleted = false;
         public string focusSplinter = "";
@@ -46,12 +45,14 @@ namespace SplinterlandsRObot.Game
         private DateTime SleepUntil = DateTime.MinValue;
         private bool prioritizeFocus = false;
         JToken matchDetails = null;
+        private DateTime LastAirdrop = DateTime.MinValue;
+        private DateTime LastSPSclaim = DateTime.MinValue;
+        private DateTime NextSPSUnstake = DateTime.MinValue;
 
         public BotInstance(User user, int instanceIndex)
         {
             UserData = user;
             InstanceIndex = instanceIndex;
-            //UpdateUserDetails(725);
             InstanceManager.UsersStatistics.Add(new UserStats()
             {
                 Account = UserData.Username,
@@ -76,7 +77,16 @@ namespace SplinterlandsRObot.Game
             _webSocket.MessageReceived.Subscribe(OnMessageReceived);
             _webSocket.ReconnectionHappened.Subscribe(OnReconnectionHappened);
             _webSocket.DisconnectionHappened.Subscribe(OnDisconnectionHappened);
-            //Logs.LogMessage($"{UserData.Username}: User details loaded.", Logs.LOG_SUCCESS);
+            UserConfig = new Config(UserData.ConfigFile);
+            InstanceManager._configs.Subscribe(OnConfigChanged);
+        }
+
+        private void OnConfigChanged(string _config)
+        {
+            if (_config == UserData.ConfigFile)
+            {
+                UserConfig = new Config(UserData.ConfigFile);
+            }
         }
         #endregion
 
@@ -96,7 +106,7 @@ namespace SplinterlandsRObot.Game
             {
                 if (SleepUntil > DateTime.Now)
                 {
-                    Logs.LogMessage($"{UserData.Username}: Account benched until {SleepUntil}",supress: true);
+                    Logs.LogMessage($"{UserData.Username}: Player benched until {SleepUntil}",supress: true);
                     return SleepUntil;
                 }
 
@@ -106,10 +116,10 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
-                Logs.LogMessage($"{UserData.Username}: Refreshing user data.", Logs.LOG_ALERT, supress: true);
-                if (!UpdateUserDetails())
+                Logs.LogMessage($"{UserData.Username}: Updating player data.", Logs.LOG_ALERT, supress: true);
+                if (!await UpdatePlayer())
                     return SleepUntil;
-
+                
                 if (!_webSocket.IsStarted)
                 {
                     await WebsocketStart();
@@ -121,6 +131,12 @@ namespace SplinterlandsRObot.Game
                 if (UserConfig.ClaimSPS && (DateTime.Now - LastAirdrop).TotalHours > UserConfig.CheckForAirdropEvery)
                     await new CollectSPS().ClaimSPS(UserData, UserDetails.token);
 
+                if (UserConfig.ClaimSPSRewards && (DateTime.Now - LastSPSclaim).TotalHours > UserConfig.ClaimSPSRewardsEvery)
+                    LastSPSclaim = await new CollectSPS().ClaimSPSRewards(UserData, UserDetails.token); 
+
+                if (UserConfig.UnstakeSPS && DateTime.Now > NextSPSUnstake)
+                    NextSPSUnstake = await new CollectSPS().SPSUnstake(UserData, UserDetails.token, UserConfig.MinimumSPSUnstakeAmount, UserConfig.UnstakeWeekly, UserBalance.SPSP);
+
                 if (UserConfig.AutoClaimSeasonRewards)
                 {
                     if (UserDetails.season_reward is not null)
@@ -129,7 +145,7 @@ namespace SplinterlandsRObot.Game
                         {
                             if (UserDetails.season_reward.season is not null)
                             {
-                                await HiveActions.ClaimSeasonRewards(UserData, UserDetails.season_reward.season, UserConfig);
+                                await HiveService.ClaimSeasonRewards(UserData, UserDetails.season_reward.season, UserConfig);
                             }
                         }
                     }
@@ -157,12 +173,6 @@ namespace SplinterlandsRObot.Game
                     }
                 }
 
-                if (!Settings.DO_BATTLE)
-                {
-                    SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
-                    return SleepUntil;
-                }
-
                 if (UserConfig.LeagueAdvance) await AdvanceLeague();
 
                 InstanceManager.UsersStatistics[botInstance].Season = new SeasonProgress().SeasonChestsProgress(UserDetails.current_season_player, UserDetails.current_modern_season_player);
@@ -170,102 +180,108 @@ namespace SplinterlandsRObot.Game
                 Logs.LogMessage($"{UserData.Username}: Current Energy Capture Rate is {UserBalance.ECR}%", supress: true);
 
                 if (UserConfig.FocusEnabled)
-                    Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
-
-                if (UserDetails.quest != null)
                 {
-                    focusSplinter = UserDetails.quest.GetFocusSplinter();
-                    UserDetails.quest.CalculateEarnedChests();
-
-                    if (UserConfig.ClaimFocusChests)
+                    Logs.LogMessage($"{UserData.Username}: Daily Focus enabled", Logs.LOG_SUCCESS, true);
+                    if (UserDetails.quest is not null)
                     {
-                        if (UserDetails.quest.CanFocusBeClaimed())
+                        focusSplinter = UserDetails.quest.GetFocusSplinter();
+                        UserDetails.quest.CalculateEarnedChests();
+
+                        if (UserConfig.ClaimFocusChests)
                         {
-                            Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
-                            string focusClaimTx = await UserDetails.quest.ClaimFocusRewards(UserData);
-                            if (focusClaimTx != null)
+                            if (UserDetails.quest.CanFocusBeClaimed())
                             {
-                                JToken response = null;
-                                bool success = false;
-                                (success, response) = await WaitForTransactionSuccess(focusClaimTx, 60);
-                                if (success)
+                                Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
+                                string focusClaimTx = await UserDetails.quest.ClaimFocusRewards(UserData);
+                                if (focusClaimTx != null)
                                 {
-                                    UserDetails.quest.claim_trx_id = response["data"]["trx_info"]["id"].ToString();
-                                    OutputQuestResults(response["data"].ToString());
-                                    if (UserConfig.AutoTransferAfterFocusClaim)
-                                        _ = Task.Run(async () => await new TransferAssets().TransferAssetsAsync(UserData).ConfigureAwait(false));
-                                }
-                                else
-                                {
-                                    Logs.LogMessage($"{UserData.Username}: Unable to claim Focus rewards, skipping account", Logs.LOG_WARNING);
-                                    SleepUntil = DateTime.Now.AddMinutes(5);
-                                    return SleepUntil;
+                                    JToken response = null;
+                                    bool success = false;
+                                    (success, response) = await WaitForTransactionSuccess(focusClaimTx, 60);
+                                    if (success)
+                                    {
+                                        UserDetails.quest.claim_trx_id = response["data"]["trx_info"]["id"].ToString();
+                                        OutputQuestResults(response["data"].ToString());
+                                        if (UserConfig.AutoTransferAfterFocusClaim)
+                                            _ = Task.Run(async () => await new TransferAssets().TransferAssetsAsync(UserData).ConfigureAwait(false));
+                                    }
+                                    else
+                                    {
+                                        Logs.LogMessage($"{UserData.Username}: Unable to claim Focus rewards, skipping account", Logs.LOG_WARNING);
+                                        SleepUntil = DateTime.Now.AddMinutes(5);
+                                        return SleepUntil;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    string cftx = UserDetails.quest.CheckAndStartNewFocus(UserData);
-                    if (cftx != null)
-                    {
-                        JToken response = null;
-                        bool success = false;
-                        (success, response) = await WaitForTransactionSuccess(cftx, 60);
-                        if (success)
+                        if (UserDetails.collection_power >= UserConfig.FocusStartMinimumCP)
                         {
-                            UserDetails.quest = JsonConvert.DeserializeObject<Focus>(response["data"]["trx_info"]["result"].ToString());
-                            focusSplinter = UserDetails.quest.GetFocusSplinter();
-                            Logs.LogMessage($"{UserData.Username}: New Focus started [{focusSplinter}]", Logs.LOG_SUCCESS);
-                        }
-                            
-                    }
-
-                    if (UserConfig.FocusEnabled && UserConfig.AvoidFocus && !UserDetails.quest.IsFocusRenewed())
-                    {
-                        if(UserConfig.FocusBlacklist.Length > 0 && UserConfig.FocusBlacklist.Any(x => x.Contains(focusSplinter)))
-                        {
-                            Logs.LogMessage($"{UserData.Username}: Daily Focus [{focusSplinter}] blacklisted, requesting a new one...", Logs.LOG_ALERT);
-                            string nftx = UserDetails.quest.RequestNewFocus(UserData);
-                            if (nftx != null)
+                            string cftx = UserDetails.quest.CheckAndStartNewFocus(UserData);
+                            if (cftx != null)
                             {
                                 JToken response = null;
                                 bool success = false;
-                                (success, response) = await WaitForTransactionSuccess(nftx, 60);
+                                (success, response) = await WaitForTransactionSuccess(cftx, 60);
                                 if (success)
                                 {
                                     UserDetails.quest = JsonConvert.DeserializeObject<Focus>(response["data"]["trx_info"]["result"].ToString());
                                     focusSplinter = UserDetails.quest.GetFocusSplinter();
-                                    Logs.LogMessage($"{UserData.Username}: New Daily Focus received [{focusSplinter}]", Logs.LOG_SUCCESS);
+                                    Logs.LogMessage($"{UserData.Username}: New Focus started [{focusSplinter}]", Logs.LOG_SUCCESS);
                                 }
-                                else
+
+                            }
+
+                            if (UserConfig.AvoidFocus && !UserDetails.quest.IsFocusRenewed())
+                            {
+                                if (UserConfig.FocusBlacklist.Length > 0 && UserConfig.FocusBlacklist.Any(x => x.Contains(focusSplinter)))
                                 {
-                                    Logs.LogMessage($"{UserData.Username}: Error requesting new Daily Focus", Logs.LOG_WARNING);
+                                    Logs.LogMessage($"{UserData.Username}: Daily Focus [{focusSplinter}] blacklisted, requesting a new one...", Logs.LOG_ALERT);
+                                    string nftx = UserDetails.quest.RequestNewFocus(UserData);
+                                    if (nftx != null)
+                                    {
+                                        JToken response = null;
+                                        bool success = false;
+                                        (success, response) = await WaitForTransactionSuccess(nftx, 60);
+                                        if (success)
+                                        {
+                                            UserDetails.quest = JsonConvert.DeserializeObject<Focus>(response["data"]["trx_info"]["result"].ToString());
+                                            focusSplinter = UserDetails.quest.GetFocusSplinter();
+                                            Logs.LogMessage($"{UserData.Username}: New Daily Focus received [{focusSplinter}]", Logs.LOG_SUCCESS);
+                                        }
+                                        else
+                                        {
+                                            Logs.LogMessage($"{UserData.Username}: Error requesting new Daily Focus", Logs.LOG_WARNING);
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                        else { Logs.LogMessage($"{UserData.Username}: Minimum CP for starting or requesting a new Focus is not met", Logs.LOG_ALERT); }
 
-                    focusProgress = UserDetails.quest.GetFocusProgress();
+                        focusProgress = UserDetails.quest.GetFocusProgress();
 
-                    if (UserConfig.FocusEnabled)
-                        prioritizeFocus = UserDetails.quest.IsFocusPrio(random, UserConfig);
+                        prioritizeFocus = UserConfig.BattleMode.ToLower() == "modern" ?
+                                            (UserDetails.modern_rating < UserConfig.FocusMinimumRating ? false : UserDetails.quest.IsFocusPrio(random, UserConfig))
+                                            : (UserDetails.rating < UserConfig.FocusMinimumRating ? false : UserDetails.quest.IsFocusPrio(random, UserConfig));
 
-                    if (UserConfig.FocusEnabled)
+
                         Logs.LogMessage($"{UserData.Username}: Current Focus: {focusSplinter}", Logs.LOG_ALERT, true);
 
-                    InstanceManager.UsersStatistics[botInstance].Quest = $"{focusSplinter}[{focusProgress}]";
-                    InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - UserDetails.quest.created_date.ToLocalTime()).TotalHours).ToString();
-                    InstanceManager.UsersStatistics[botInstance].Balance = UserBalance;
-                    InstanceManager.UsersStatistics[botInstance].CollectionPower = UserDetails.collection_power;
-                    InstanceManager.UsersStatistics[botInstance].League = UserConfig.BattleMode == "modern" ?
-                                    SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
-                                    : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name;
+                        InstanceManager.UsersStatistics[botInstance].Quest = $"{focusSplinter}[{focusProgress}]";
+                        InstanceManager.UsersStatistics[botInstance].HoursUntilNextQuest = (24 - (DateTime.Now - UserDetails.quest.created_date.ToLocalTime()).TotalHours).ToString();
+                        InstanceManager.UsersStatistics[botInstance].Balance = UserBalance;
+                        InstanceManager.UsersStatistics[botInstance].CollectionPower = UserDetails.collection_power;
+                        InstanceManager.UsersStatistics[botInstance].League = UserConfig.BattleMode == "modern" ?
+                                        SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
+                                        : SplinterlandsData.splinterlandsSettings.leagues.wild[UserDetails.league].name;
+                    }
+                    else
+                    {
+                        Logs.LogMessage($"{UserData.Username}: Having issues reading Daily Focus info", Logs.LOG_WARNING);
+                    }
                 }
-                else
-                {
-                    Logs.LogMessage($"{UserData.Username}: Having issues reading Daily Focus info", Logs.LOG_WARNING);
-                }
-
+                
                 if (!waitForECR)
                 {
                     if ((UserBalance.ECR) < UserConfig.EcrLimit)
@@ -299,6 +315,12 @@ namespace SplinterlandsRObot.Game
 
                 await UpdatePlayerCards();
 
+                if (!Settings.DO_BATTLE)
+                {
+                    SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
+                    return SleepUntil;
+                }
+
                 if (!UserConfig.UsePrivateApi)
                 {
                     //Check public api limit
@@ -315,7 +337,7 @@ namespace SplinterlandsRObot.Game
                 matchDetails = null;
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                string tx = HiveActions.StartNewMatch(UserData, UserConfig.BattleMode);
+                string tx = await BattleService.StartBattle(UserData, UserConfig.BattleMode);
 
                 if (tx == "")
                 {
@@ -418,7 +440,7 @@ namespace SplinterlandsRObot.Game
                     }
 
                     await Task.Delay(new Random().Next(3000, 8000));
-                    var submittedTeam = HiveActions.SubmitTeam(tx, matchDetails, team, UserData, UserCards);
+                    var submittedTeam = await BattleService.SubmitTeam(tx, matchDetails, team, UserData, UserCards);
                     Logs.LogMessage($"{UserData.Username}: Team submitted. TX:{submittedTeam.tx}", supress: true);
                     if (!await BattleState.WaitForTeamSubmitted(15))
                     {
@@ -446,10 +468,10 @@ namespace SplinterlandsRObot.Game
                     }
                     else
                     {
-                        if (!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, UserCards))
+                        if (!await BattleService.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, UserCards))
                         {
                             Logs.LogMessage($"{UserData.Username}: Error revealing team. Trying again", Logs.LOG_WARNING);
-                            if (!HiveActions.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, UserCards))
+                            if (!await BattleService.RevealTeam(tx, matchDetails, team, submittedTeam.secret, UserData, UserCards))
                                 Logs.LogMessage($"{UserData.Username}: Error revealing team on second attempt", Logs.LOG_WARNING);
                         }
                             
@@ -457,7 +479,7 @@ namespace SplinterlandsRObot.Game
                 }
                 else
                 {
-                    if (!HiveActions.SurrenderBattle(tx, UserData))
+                    if (!await BattleService.SurrenderBattle(tx, UserData))
                         Logs.LogMessage($"{UserData.Username}: Error surrendering match.", Logs.LOG_WARNING);
                 }
 
@@ -534,7 +556,7 @@ namespace SplinterlandsRObot.Game
             if (winner == UserDetails.name)
             {
                 if (Settings.DO_BATTLE)
-                    Logs.LogMessage($"{UserData.Username}: Match Won {(status == 8 ? "(Enemy surrendered) " : "")}[Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}(+{ratingUpdate}); Reward: { lastDecUpdate } DEC; RShares: {lastRsharesUpdate}]", Logs.LOG_SUCCESS);
+                    Logs.LogMessage($"{UserData.Username}: Match Won {(status == 8 ? "(Enemy surrendered) " : "")}[Rating: {(UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating)}(+{ratingUpdate}); RShares: {lastRsharesUpdate}]", Logs.LOG_SUCCESS); /*Reward: { lastDecUpdate } DEC;*/
                 InstanceManager.UsersStatistics[InstanceIndex].Wins++;
                 InstanceManager.UsersStatistics[InstanceIndex].MatchRewards = Convert.ToDouble(lastDecUpdate);
                 InstanceManager.UsersStatistics[InstanceIndex].TotalRewards = InstanceManager.UsersStatistics[InstanceIndex].TotalRewards + Convert.ToDouble(lastDecUpdate);
@@ -578,12 +600,30 @@ namespace SplinterlandsRObot.Game
             UserDetails.quest.rshares = rshares;
         }
 
-        public bool UpdateUserDetails(int wait = 0)
+        public async Task<bool> UpdatePlayer(int wait = 0)
         {
             try
             {
-                Thread.Sleep((wait == 0 ? random.Next(1000, 3000) : wait));
-                UserDetails = HiveActions.GetUserDetails(UserData.Username, UserData.Keys.PostingKey).Result;
+                Thread.Sleep((wait == 0 ? random.Next(0, 700) : wait));
+                var bid = "bid_" + Helpers.RandomString(20);
+                var sid = "sid_" + Helpers.RandomString(20);
+                var ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
+                string signature = HiveService.SignTransaction(UserData.Username, UserData.Keys.PostingKey, ts);
+
+                if (UserData.Keys.JwtToken is null || UserData.Keys.JwtExpire is null)
+                {
+                    UserDetails = await SplinterlandsAPI.LoginAccount(UserData.Username, bid, sid, signature, ts);
+                }
+                else if (UserData.Keys.JwtExpire < DateTime.Now)
+                {
+                    UserDetails = await SplinterlandsAPI.LoginAccount(UserData.Username, bid, sid, signature, ts);
+                }
+
+                UserData.Keys.JwtToken = UserDetails.jwt_token;
+                UserData.Keys.JwtExpire = UserDetails.jwt_expiration_dt;
+
+                UserDetails = await SplinterlandsAPI.UpdateAccount(UserData.Username, bid, sid, signature, ts, UserData.Keys.JwtToken);
+                
                 UserBalance = new Balances()
                 {
                     Credits = UserDetails.balances.Where(x => x.token == "CREDITS").Any() ? UserDetails.balances.Where(x => x.token == "CREDITS").First().balance : 0,
@@ -599,7 +639,6 @@ namespace SplinterlandsRObot.Game
                 };
                 
                 UserBalance.UpdateECR(UserDetails.balances);
-                UserConfig = new Config(UserData.ConfigFile);
                 InstanceManager.UsersStatistics[InstanceIndex].Rating = (UserConfig.BattleMode == "modern" ? UserDetails.modern_rating : UserDetails.rating);
                 InstanceManager.UsersStatistics[InstanceIndex].League = UserConfig.BattleMode == "modern" ?
                                     SplinterlandsData.splinterlandsSettings.leagues.modern[(int)UserDetails.modern_league].name
@@ -620,7 +659,7 @@ namespace SplinterlandsRObot.Game
             try
             {
                 UserCards = await SplinterlandsAPI.GetUserCardsCollection(UserData.Username, UserDetails.token);
-                await Task.Delay(random.Next(1000, 3000));
+                await Task.Delay(random.Next(0, 700));
             }
             catch (Exception ex)
             {
@@ -700,9 +739,13 @@ namespace SplinterlandsRObot.Game
                     {
                         rewards[i] = $"{reward.quantity} x Packs";
                     }
-                    else
+                    else if (reward.type == "merits")
                     {
                         rewards[i] = $"{reward.quantity} x Merits";
+                    }
+                    else if (reward.type == "sps")
+                    {
+                        rewards[i] = $"{reward.quantity} x SPS";
                     }
                     i++;
                 }
@@ -723,7 +766,7 @@ namespace SplinterlandsRObot.Game
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
 
-                    string tx = HiveActions.AdvanceLeague(UserData, UserConfig.BattleMode);
+                    string tx = HiveService.AdvanceLeague(UserData, UserConfig.BattleMode);
                     JToken response = null;
                     bool success = false;
                     (success, response) = await WaitForTransactionSuccess(tx, 45);

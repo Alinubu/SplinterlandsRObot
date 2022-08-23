@@ -10,6 +10,7 @@ namespace SplinterlandsRObot.Player
         public double EcrLimit { get; set; }
         public bool WaitToRechargeEcr { get; set; }
         public double EcrRechargeLimit { get; set; }
+        public int PowerLimit { get; set; }
         //Battle mode
         public string BattleMode { get; set; }
         //League
@@ -19,6 +20,8 @@ namespace SplinterlandsRObot.Player
         //Focus
         public bool FocusEnabled { get; set; }
         public bool ClaimFocusChests { get; set; }
+        public int FocusStartMinimumCP { get; set; }
+        public int FocusMinimumRating { get; set; }
         public bool AvoidFocus { get; set; }
         public string[] FocusBlacklist { get; set; }
         public double FocusRate { get; set; }
@@ -39,13 +42,18 @@ namespace SplinterlandsRObot.Player
         //SPS
         public bool ClaimSPS { get; set; }
         public int CheckForAirdropEvery { get; set; }
+        public bool ClaimSPSRewards { get; set; }
+        public int ClaimSPSRewardsEvery { get; set; }
+        public bool UnstakeSPS { get; set; }
+        public double MinimumSPSUnstakeAmount { get; set; }
+        public bool UnstakeWeekly { get; set; }
         //Rentals
         public bool EnableRentals { get; set; }
-        public int PowerLimit { get; set; }
         public bool BattleWhileRenting { get; set; }
         public string DaysToRent { get; set; }
         //Rent file
         public bool UseRentFile { get; set; }
+        public int GroupCardsAmount { get; set; }
         public string RentFile { get; set; }
         public int MaxTriesPerAccount { get; set; }
         //Rent for Power
@@ -88,6 +96,7 @@ namespace SplinterlandsRObot.Player
             EcrLimit = Convert.ToDouble(Helpers.ReadNode(rootNode, "ECR/Limit", false, "75"));
             WaitToRechargeEcr = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ECR/WaitToRecharge", false, "false"));
             EcrRechargeLimit = Convert.ToDouble(Helpers.ReadNode(rootNode, "ECR/RechargeLimit", false, "99"));
+            PowerLimit = Convert.ToInt32(Helpers.ReadNode(rootNode, "PowerLimit", false, "0"));
             BattleMode = Helpers.ReadNode(rootNode, "BattleMode", false, "modern");
             LeagueAdvance = Convert.ToBoolean(Helpers.ReadNode(rootNode, "League/AdvanceToNext", false, "true"));
             LeagueRatingThreshold = Convert.ToInt32(Helpers.ReadNode(rootNode, "League/AdvanceRatingThreshold", false, "0"));
@@ -101,6 +110,8 @@ namespace SplinterlandsRObot.Player
             FocusRateDeath = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Death", false, "-1"));
             FocusRateDragon = Convert.ToDouble(Helpers.ReadNode(rootNode, "Quests/SplinterFocusOverride/Dragon", false, "-1"));
             ClaimFocusChests = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/ClaimRewards", false, "true"));
+            FocusStartMinimumCP = Convert.ToInt32(Helpers.ReadNode(rootNode, "Quests/FocusStartMinimumCP", false, "0"));
+            FocusMinimumRating = Convert.ToInt32(Helpers.ReadNode(rootNode, "Quests/FocusMinimumRating", false, "0"));
             AvoidFocus = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Quests/AvoidQuests/Enabled", false, "false"));
             FocusBlacklist = Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList", false, "none") != "none" ? Helpers.ReadNode(rootNode, "Quests/AvoidQuests/QuestList").Split(';') : new string[0];
             AutoClaimSeasonRewards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Season/AutoClaimSeasonRewards", false, "false"));
@@ -109,12 +120,17 @@ namespace SplinterlandsRObot.Player
             UseStarterCards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "Cards/UseStarterCards", false, "true"));
             ClaimSPS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/Airdrops/CollectSPS", false, "false"));
             CheckForAirdropEvery = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/Airdrops/CheckForAirdropEvery", false, "5"));
+            ClaimSPSRewards = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/SPS/ClaimSPSRewards", false, "false"));
+            ClaimSPSRewardsEvery = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/SPS/ClaimSPSRewardsEvery", false, "24"));
+            UnstakeSPS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/SPS/UnstakeSPS", false, "false"));
+            MinimumSPSUnstakeAmount = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/SPS/MinimumSPSUnstakeAmount", false, "100"));
+            UnstakeWeekly = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/SPS/UnstakeWeekly", false, "false"));
             EnableRentals = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/UseRentalBot", false, "false"));
-            PowerLimit = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/PowerLimit", false, "0"));
             BattleWhileRenting = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/BattleWhileRenting", false, "false"));
             DaysToRent = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/DaysToRent", false, "1");
             MaxTriesPerAccount = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/MaxTriesPerUser", false, "999999"));
             UseRentFile = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentSpecificCards", false, "false"));
+            GroupCardsAmount = Convert.ToInt32(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/GroupCardsAmount", false, "5"));
             RentFile = Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentFile", false, "false");
             RentForPower = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentForPower", false, "false"));
             RentGoldCardsOnly = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RentalBot/RentGoldOnly", false, "false"));

@@ -32,7 +32,6 @@ namespace SplinterlandsRObot.Player
         public int league { get; set; }
         public int? modern_league { get; set; }
         public List<Balance> balances { get; set; }
-        //public List<object> unrevealed_rewards { get; set; }
         public int season_max_league { get; set; }
         public int? modern_season_max_league { get; set; }
         public Focus? quest { get; set; }
@@ -40,8 +39,8 @@ namespace SplinterlandsRObot.Player
         public Season? current_season_player { get; set; }
         public Season? current_modern_season_player { get; set; }
         public Season? previous_season_player { get; set; }
-        public string jwt_token { get; set; }
-        public DateTime jwt_expiration_dt { get; set; }
+        public string? jwt_token { get; set; }
+        public DateTime? jwt_expiration_dt { get; set; }
         public JToken? outstanding_match { get; set; }
     }
     public class SeasonReward

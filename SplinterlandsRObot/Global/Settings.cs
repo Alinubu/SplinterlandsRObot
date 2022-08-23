@@ -8,9 +8,13 @@ namespace SplinterlandsRObot
     {
         public static bool DO_BATTLE { get; private set; }
         public static int MAX_THREADS { get; private set; }
-        public static bool DEBUG_MODE { get; set; }
+        public static bool DEBUG_MODE { get; private set; }
         public static string? API_URL { get; private set; }
         public static string? HIVE_NODE { get; private set; }
+        public static string? PROXY_URL { get; private set; }
+        public static string? PROXY_PORT { get; private set; }
+        public static string? PROXY_USERNAME { get; private set; }
+        public static string? PROXY_PASSWORD { get; private set; }
 
         public static void LoadSettings()
         {
@@ -22,6 +26,10 @@ namespace SplinterlandsRObot
             DEBUG_MODE = Convert.ToBoolean(Helpers.ReadNode(rootNode, "DebugMode", false, "false"));
             API_URL = Helpers.ReadNode(rootNode, "ApiUrl", false, "http://api.splinterlandsrobot.com:5000");
             HIVE_NODE = Helpers.ReadNode(rootNode, "HiveNode", false, "https://anyx.io/");
+            PROXY_URL = Helpers.ReadNode(rootNode, "Proxy/ProxyUrl", false, null);
+            PROXY_PORT = Helpers.ReadNode(rootNode, "Proxy/ProxyPort", false, null);
+            PROXY_USERNAME = Helpers.ReadNode(rootNode, "Proxy/ProxyUsername", false, null);
+            PROXY_PASSWORD = Helpers.ReadNode(rootNode, "Proxy/ProxyPassword", false, null);
         }
 
         public static void ChangeConfig(string settingName, string settingValue)
