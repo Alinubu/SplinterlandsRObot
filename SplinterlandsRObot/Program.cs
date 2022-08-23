@@ -67,7 +67,7 @@ class Program
                 }
                 else if (command == "START-CLAIM-SEASON-REWARDS")
                 {
-                    _ = Task.Run(async () => await new HiveActions().ClaimSeasonRewards().ConfigureAwait(false));
+                    _ = Task.Run(async () => await new HiveService().ClaimSeasonRewards().ConfigureAwait(false));
                 }
                 else
                 {

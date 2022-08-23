@@ -10,5 +10,7 @@
     {
         public string? ActiveKey { get; set; }
         public string PostingKey { get; set; }
+        public string? JwtToken { get; set; }
+        public DateTime? JwtExpire { get; set; }
     }
 }

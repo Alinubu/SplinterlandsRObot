@@ -6,6 +6,7 @@
 	<WaitToRecharge>false</WaitToRecharge><!--After the lower limit is reached, bot will wait until accout ECR is at the set value-->
 	<RechargeLimit>99</RechargeLimit><!--ECR value to recharge to-->
   </ECR>
+  <PowerLimit>0</PowerLimit><!--Used by Rental Bot and FocusStartMinimumCP option. When user CP is below limit it will be added to the renting queue-->
   <BattleMode>modern</BattleMode><!--Ranked battle mode. Options: modern or wild-->
   <League>
 	<AdvanceToNext>true</AdvanceToNext><!--Bot will advance user to a higher league (Bronze->Silver, Silver->Gold)-->
@@ -15,6 +16,8 @@
   <Quests>
 	<DoQuests>true</DoQuests><!--Bot will prioritize teams based on active quest-->
 	<ClaimRewards>true</ClaimRewards><!--Claims quests rewards when quest completed-->
+	<FocusStartMinimumCP>0</FocusStartMinimumCP><!--Minimun account CP to start a daily focus-->
+	<FocusMinimumRating>0</FocusMinimumRating><!--If rating is below this value the bot will not play teams for the focus-->
 	<AvoidQuests>
 	  <Enabled>false</Enabled><!--If there are specific quests you would like the bot to avoid, enable this end set below the list-->
 	  <QuestList>Fire;Neutral</QuestList><!--Available options: Life,Water,Snipe,Earth,Fire,Death,Neutral,Dragon,Sneak-->
@@ -33,7 +36,7 @@
 	<AutoClaimSeasonRewards>false</AutoClaimSeasonRewards><!--Automatically claims the season rewards once available-->
   </Season>
   <Cards>
-	<PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized in the order they are set if the active splinters allow it-->
+	<PreferredSummoners></PreferredSummoners><!--Usage: Kelya Frendul;Tarsa (separated by ";" and no spaces before and after.Summoners will be prioritized based on the api ranking logic and in no specific order-->
 	<ReplaceStarterCards>true</ReplaceStarterCards><!--Will try to replace starter cards in the given team with similar owned cards-->
 	<UseStarterCards>true</UseStarterCards><!--When disabled it will only used owned or rented cards, the starter/ghost cards will be excluded-->
   </Cards>
@@ -43,14 +46,21 @@
 	  <CollectSPS>false</CollectSPS><!--If enabled will claim the Hive SPS Airdrop-->
 	  <CheckForAirdropEvery>5</CheckForAirdropEvery><!--(Hours)-->
 	</Airdrops>
+	<SPS>
+	  <ClaimSPSRewards>false</ClaimSPSRewards><!--If enabled the bot will claim the staking rewards-->
+	  <ClaimSPSRewardsEvery>24</ClaimSPSRewardsEvery><!--(Hours) Will claim SPS rewards every set hours.-->
+	  <UnstakeSPS>false</UnstakeSPS><!--If enabled the bot will automatically unstake SPS-->
+	  <MinimumSPSUnstakeAmount>100</MinimumSPSUnstakeAmount><!--Minimum value of staked SPS at which the bot to unstake-->
+	  <UnstakeWeekly>false</UnstakeWeekly><!--If enabled the bot will cancel the current unstaking after the first 25% is received and post a new unstake-->
+	</SPS>
 	<RentalBot>
 	  <UseRentalBot>false</UseRentalBot><!--Enables the renting features, all settings below will be ignored if this is disabled-->
-	  <PowerLimit>0</PowerLimit><!--Used by Rental Bot. When user CP is below limit it will be added to the renting queue-->
 	  <BattleWhileRenting>false</BattleWhileRenting><!--Accounts will continue to battle even if CP is below PowerLimit-->
-	  <DaysToRent>1</DaysToRent><!--Number of days a card should be rented for-->
+	  <DaysToRent>2</DaysToRent><!--Number of days a card should be rented for-->
 	  <MaxTriesPerUser>999999</MaxTriesPerUser><!--Number of times it should try to rent the cards for one user before moving to the next one-->
 	  <RentSpecificCards>false</RentSpecificCards><!--Will prioritize renting the cards setup in the rentConfig set for each user-->
-	  <RentFile>rentcards_example.xml</RentFile>
+	  <GroupCardsAmount></GroupCardsAmount><!--How many cards to try and group in one transaction. Recommanded value is 5, the higher the value is it will increase the chanches of softbans-->
+	  <RentFile>rentcards_example.xml</RentFile><!--The name of the renting configuration file in the Config folder-->
 	  <RentForPower>false</RentForPower><!--Will rent any card that matches de configured parameters-->
 	  <RentGoldOnly>false</RentGoldOnly><!--When renting for Power, if enabled, bot will only check the gold cards-->
 	  <CPperDecLimit>250</CPperDecLimit><!--Set the minimum CP/DEC for renting-->

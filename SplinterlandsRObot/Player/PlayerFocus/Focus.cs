@@ -59,7 +59,7 @@ namespace SplinterlandsRObot.Player.PlayerFocus
         {
             try
             {
-                string tx = new HiveActions().ClaimQuest(user, id);
+                string tx = new HiveService().ClaimQuest(user, id);
                 Logs.LogMessage($"{user.Username}: Claimed Daily Focus reward. Tx:{tx}");
 
                 return tx;
@@ -78,7 +78,7 @@ namespace SplinterlandsRObot.Player.PlayerFocus
                 if (IsFocusClaimed() && earned_chests > 0)
                 {
                     Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
-                    string tx = new HiveActions().StartFocus(user);
+                    string tx = new HiveService().StartFocus(user);
                     if (tx != null)
                     {
                         return tx;
@@ -91,7 +91,7 @@ namespace SplinterlandsRObot.Player.PlayerFocus
                 else if (!IsFocusClaimed() && earned_chests == 0)
                 {
                     Logs.LogMessage($"{user.Username}: New daily Focus available, requesting from Splinterlands...");
-                    string tx = new HiveActions().StartFocus(user);
+                    string tx = new HiveService().StartFocus(user);
                     if (tx != null)
                     {
                         return tx;
@@ -113,7 +113,7 @@ namespace SplinterlandsRObot.Player.PlayerFocus
         {
             if (!IsFocusCompleted() && !IsFocusClaimed())
             {
-                string tx = new HiveActions().NewQuest(user);
+                string tx = new HiveService().NewQuest(user);
                 if (tx != null)
                 {
                     return tx;

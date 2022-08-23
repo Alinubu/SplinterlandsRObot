@@ -11,135 +11,92 @@ namespace SplinterlandsRObot.API
     public class Splinterlands
     {
         const string API_URL = "https://api2.splinterlands.com";
-        const string SP_USER_DATA = "/players/details?name=";
-        const string SP_QUEST_DATA = "/players/quests?username=";
-        const string SP_CARDS_COLLECTION = "/cards/collection/@@_username_@@?v=@@_timestamp_@@&token=@@_accessToken_@@&username=@@_username_@@";
-        const string SP_OUTSTANGING_MATCH = "/players/outstanding_match?username=";
-        const string SP_AIRDROP_DATA = "/players/sps?v=1638714545572&token=@@_accessToken_@@&username=@@_username_@@";
-        const string SP_PlAYER_BALANCE = "/players/balances?username=";
-        const string SP_CLAIM_SEASON_REWARDS = "/players/login?name=@@_username_@@&ref=&browser_id=@@_browserid_@@&session_id=@@_sessionid_@@&sig=@@_signature_@@&ts=@@_timestamp_@@";
-        const string SP_TRANSACTION_DETAILS = "/transactions/lookup?trx_id=";
-        const string SP_MATCH_DETAILS = "/battle/status?id=";
-        const string SP_MATCH_ENEMY_PICK = "/players/outstanding_match?username=";
-        const string SP_MATCH_RESULTS = "/battle/history2?player=";
-        const string SP_ACCESS_TOKEN = "/players/login?name=@@_username_@@&ref=&browser_id=@@_bid_@@&session_id=@@_sid_@@&sig=@@_signature_@@&ts=@@_timestamp_@@";
-        const string SP_SPLINTERLANDS_CARDS = "/cards/get_details";
-        const string SP_SPLINTERLANDS_SETTINGS = "/settings";
-        HttpClient client = new HttpClient();
+        const string ORIGIN = "https://splinterlands.com";
+        const string REFERER = "https://splinterlands.com";
+        const string SP_USER_DATA = "players/details?name=";
+        const string SP_CARDS_COLLECTION = "cards/collection/@@_username_@@?v=@@_timestamp_@@&token=@@_accessToken_@@&username=@@_username_@@";
+        const string SP_OUTSTANGING_MATCH = "players/outstanding_match?username=";
+        const string SP_PlAYER_BALANCE = "players/balances?username=";
+        const string SP_TRANSACTION_DETAILS = "transactions/lookup?trx_id=";
+        const string SP_SPLINTERLANDS_CARDS = "cards/get_details";
+        const string SP_SPLINTERLANDS_SETTINGS = "settings";
+        const string SP_LOGIN = "players/v2/login?name=@@_username_@@&ref=&browser_id=@@_bid_@@&session_id=@@_sid_@@&sig=@@_signature_@@&ts=@@_timestamp_@@";
+        const string SP_UPDATE = "players/v2/update?name=@@_username_@@&ref=&browser_id=@@_bid_@@&session_id=@@_sid_@@&ts=@@_timestamp_@@&keychain=false&sig=@@_signature_@@&v=@@_timestamp_@@";
+        WebClient client;
 
         public Splinterlands()
         {
-            client.DefaultRequestHeaders.Add("origin", "https://splinterlands.com");
-            client.DefaultRequestHeaders.Add("referer", "https://splinterlands.com");
-            client.DefaultRequestHeaders.Add("accept", "application/json, text/plain, */*");
-            client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36");
+            client = new WebClient(API_URL, ORIGIN, REFERER, Settings.PROXY_URL, Settings.PROXY_PORT, Settings.PROXY_USERNAME, Settings.PROXY_PASSWORD);
         }
 
         public async Task<List<SplinterlandsCard>> GetSplinterlandsCards()
         {
-            string result = "";
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_SPLINTERLANDS_CARDS);
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
+            string result = await client.GetAsync(SP_SPLINTERLANDS_CARDS);
             return JsonConvert.DeserializeObject<List<SplinterlandsCard>>(result); ;
         }
         public async Task<SplinterlandsSettings> GetSplinterlandsSettings()
         {
-            string result = "";
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_SPLINTERLANDS_SETTINGS);
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
+            string result = await client.GetAsync(SP_SPLINTERLANDS_SETTINGS);
             return JsonConvert.DeserializeObject<SplinterlandsSettings>(result);
         }
 
         public async Task<UserDetails> GetUserDetails(string username)
         {
-            string result = "";
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_USER_DATA + username);
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
+            string result = await client.GetAsync(SP_USER_DATA + username);
             await Task.Delay(500);
             return JsonConvert.DeserializeObject<UserDetails>(result);
         }
-        public async Task<string> GetUserAccesToken(string username, string bid, string sid, string signature, string ts)
+        public async Task<UserDetails> LoginAccount(string username, string bid, string sid, string signature, string ts)
         {
-            string result = "";
-            HttpResponseMessage response = await client.GetAsync(API_URL + SP_ACCESS_TOKEN.Replace("@@_username_@@", username).Replace("@@_bid_@@", bid).Replace("@@_sid_@@", sid).Replace("@@_signature_@@", signature).Replace("@@_timestamp_@@",ts));
-            if (response.IsSuccessStatusCode)
+            string result = await client.GetAsync(SP_LOGIN.Replace("@@_username_@@", username).Replace("@@_bid_@@", bid).Replace("@@_sid_@@", sid).Replace("@@_signature_@@", signature).Replace("@@_timestamp_@@", ts));
+            if (result.Contains("Incorrect username / password combination"))
             {
-                result = await response.Content.ReadAsStringAsync();
+                throw new Exception("Invalid username or posting key in users.xml");
             }
-            return result;
+            return JsonConvert.DeserializeObject<UserDetails> (result);
         }
+
+        public async Task<UserDetails> UpdateAccount(string username, string bid, string sid, string signature, string ts, string jwt_token)
+        {
+            string result = await client.GetAsync(SP_UPDATE.Replace("@@_username_@@", username).Replace("@@_bid_@@", bid).Replace("@@_sid_@@", sid).Replace("@@_signature_@@", signature).Replace("@@_timestamp_@@", ts), new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt_token));
+            if (result.Contains("Incorrect username / password combination"))
+            {
+                throw new Exception("Invalid username or posting key in users.xml");
+            }
+            return JsonConvert.DeserializeObject<UserDetails> (result);
+        }
+
         public async Task<CardsCollection> GetUserCardsCollection(string username, string accessToken)
         {
-            string result = "";
             string ts = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
-            HttpResponseMessage response = await client.GetAsync(API_URL + SP_CARDS_COLLECTION.Replace("@@_username_@@", username).Replace("@@_timestamp_@@", ts).Replace("@@_accessToken_@@", accessToken));
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
-            else
-            {
-                throw new Exception("Error getting the cards collection for the user");
-            }
+            string result = await client.GetAsync(SP_CARDS_COLLECTION.Replace("@@_username_@@", username).Replace("@@_timestamp_@@", ts).Replace("@@_accessToken_@@", accessToken));
+            
             await Task.Delay(500);
 
             return JsonConvert.DeserializeObject<CardsCollection>(result);
         }
         public async Task<string> GetOutstandingMatch(string username)
         {
-            string result = "";
-
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_OUTSTANGING_MATCH + username);
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
-
-            return result;
+            return await client.GetAsync(SP_OUTSTANGING_MATCH + username);
         }
         public async Task<string> GetTransactionDetails(string tx)
         {
-            string result = "";
-
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_TRANSACTION_DETAILS + tx);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                result = await response.Content.ReadAsStringAsync();
+                return await client.GetAsync(SP_TRANSACTION_DETAILS + tx);
             }
-            else result = null;
-
-            return result;
-        }
-        public async Task<string> GetSeasonDetails(string username, string bid, string sid, string sig, string ts)
-        {
-            string result = "";
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_CLAIM_SEASON_REWARDS.Replace("@@_username_@@", username).Replace("@@_browserid_@@", bid).Replace("@@_sessionid_@@", sid).Replace("@@_signature_@@", sig).Replace("@@_timestamp_@@", ts));
-            if (response.IsSuccessStatusCode)
+            catch (Exception ex)
             {
-                result = await response.Content.ReadAsStringAsync();
+                return null;
             }
-            return result;
         }
         public async Task<Balances> GetPlayerBalancesAsync(string username)
         {
-            string result = "";
             JToken defaultValue = new JObject(
                 new JProperty("balance", 0));
             Balances balance = new();
-            HttpResponseMessage response = await HttpWebRequest.client.GetAsync(API_URL + SP_PlAYER_BALANCE + username);
-            if (response.IsSuccessStatusCode)
-            {
-                result = await response.Content.ReadAsStringAsync();
-            }
+            string result = await client.GetAsync(SP_PlAYER_BALANCE + username);
+
             JArray balances = (JArray)JToken.Parse(result);
 
             var ECRBalance = balances.Where(x => (string)x["token"] == "ECR").FirstOrDefault(defaultValue);

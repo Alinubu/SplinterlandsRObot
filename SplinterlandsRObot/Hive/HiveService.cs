@@ -13,13 +13,34 @@ using SplinterlandsRObot.Extensions;
 
 namespace SplinterlandsRObot.Hive
 {
-    public class HiveActions
+    public class HiveService
     {
         CHived hive = new CHived(InstanceManager.HttpClient, Settings.HIVE_NODE);
         private object lk = new();
+
+        public string SignTransaction(string username, string postingKey, string ts)
+        {
+            var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(username + ts));
+            var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(postingKey));
+            var signature = Hex.ToString(sig);
+            return signature;
+        }
+
+        public CtransactionData CreateTransaction(object transactionData, string postingKey)
+        {
+            return hive.CreateTransaction(new object[] { transactionData }, new string[] { postingKey });
+        }
+
+        public string ParseTransactionData(CtransactionData oTransaction)
+        {
+            string json = JsonConvert.SerializeObject(oTransaction.tx);
+            string data = "signed_tx=" + json.Replace("operations\":[{", "operations\":[[\"custom_json\",{")
+                .Replace(",\"opid\":18}", "}]");
+            return data;
+        }
+
         public async Task<UserDetails> GetUserDetails(string username, string postingkey)
         {
-            HiveActions hive = new();
             Splinterlands sp_api = new();
             var bid = "bid_" + Helpers.RandomString(20);
             var sid = "sid_" + Helpers.RandomString(20);
@@ -27,12 +48,7 @@ namespace SplinterlandsRObot.Hive
             var hash = Sha256Manager.GetHash(Encoding.ASCII.GetBytes(username + ts));
             var sig = Secp256K1Manager.SignCompressedCompact(hash, CBase58.DecodePrivateWif(postingkey));
             var signature = Hex.ToString(sig);
-            var response = await sp_api.GetUserAccesToken(username, bid, sid, signature, ts);
-            if (response.Contains("Incorrect username / password combination"))
-            {
-                throw new Exception("Invalid username or posting key in users.xml");
-            }
-            UserDetails userDetails = JsonConvert.DeserializeObject<UserDetails>(response);
+            UserDetails userDetails = await sp_api.LoginAccount(username, bid, sid, signature, ts);
             if (userDetails == null)
             {
                 throw new Exception("Error loading user details. No response received");
@@ -40,164 +56,7 @@ namespace SplinterlandsRObot.Hive
             Thread.Sleep(655);
             return userDetails;
         }
-        public string StartNewMatch(User user, string battleMode)
-        {
-            string matchType = battleMode == "modern" ? "Modern Ranked" : "Wild Ranked";
-            string n = Helpers.RandomString(10);
-            string json = "{\"match_type\":\"" + matchType + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
-
-            COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_find_match", json);
-
-            try
-            {
-                Logs.LogMessage($"{user.Username}: Finding match...");
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
-                var postData = GetStringForSplinterlandsAPI(oTransaction);
-                var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API, Referer: "https://splinterlands.com/");
-                Logs.LogMessage($"{user.Username}: {response}", Logs.LOG_ALERT, supress: true);
-                if (response == "")
-                    return "";
-                if (!response.Contains("success"))
-                    return "error";
-
-                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
-                return responseTx;
-            }
-            catch (Exception ex)
-            {
-                Logs.LogMessage($"{user.Username}: Error at finding match: " + ex.ToString(), Logs.LOG_WARNING);
-            }
-            return "";
-        }
-
-        public (string secret, string tx) SubmitTeam(string tx, JToken matchDetails, JToken team, User user, CardsCollection CardsCached)
-        {
-            try
-            {
-                string summoner = team["summoner"].ToString();
-                string monsters = "";
-                for (int i = 1; i <= 6; i++)
-                {
-                    string monster = team[$"card{i}"].ToString();
-
-                    if (monster != "")
-                    {
-                        if (monster.Length == 0)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-                    
-                    monsters += "\"" + monster + "\",";
-                }
-                monsters = monsters[..^1];
-
-                string secret = Helpers.RandomString(10);
-                string n = Helpers.RandomString(10);
-
-                string monsterClean = monsters.Replace("\"", "");
-
-                string teamHash = Helpers.GenerateMD5Hash(summoner + "," + monsterClean + "," + secret);
-
-                string json = "{\"trx_id\":\"" + tx + "\",\"team_hash\":\"" + teamHash + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
-
-                COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_submit_team", json);
-
-                Logs.LogMessage($"{user.Username}: Submitting team...");
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
-                var postData = GetStringForSplinterlandsAPI(oTransaction);
-                var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API);
-                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
-                return (secret, responseTx);
-            }
-            catch (Exception ex)
-            {
-                Logs.LogMessage($"{user.Username}: Error at submitting team: " + ex.ToString(), Logs.LOG_WARNING);
-            }
-            return ("", "");
-        }
-
-        public bool RevealTeam(string tx, JToken matchDetails, JToken team, string secret, User user, CardsCollection CardsCached)
-        {
-            try
-            {
-                string summoner = team["summoner"].ToString();
-                string monsters = "";
-                for (int i = 1; i <= 6; i++)
-                {
-                    string monster = team[$"card{i}"].ToString();
-
-                    if (monster != "")
-                    {
-                        if (monster.Length == 0)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-
-                    monsters += "\"" + monster + "\",";
-                }
-                monsters = monsters[..^1];
-
-                string n = Helpers.RandomString(10);
-
-                string monsterClean = monsters.Replace("\"", "");
-
-
-                string json = "{\"trx_id\":\"" + tx + "\",\"summoner\":\"" + summoner + "\",\"monsters\":[" + monsters + "],\"secret\":\"" + secret + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
-
-                COperations.custom_json custom_Json = CreateCustomJson(user, false, true, "sm_team_reveal", json);
-
-                Logs.LogMessage($"{user.Username}: Revealing team...");
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_Json }, new string[] { user.Keys.PostingKey });
-                var postData = GetStringForSplinterlandsAPI(oTransaction);
-                var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API, Referer: "https://splinterlands.com/");
-                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
-                
-                if (responseTx == "")
-                    return false;
-            }
-            catch (Exception ex)
-            {
-                Logs.LogMessage($"{user.Username}: Error at revealing team: " + ex.ToString(), Logs.LOG_WARNING);
-                return false;
-            }
-            return true;
-        }
-
-        public bool SurrenderBattle(string battleId, User user)
-        {
-            try
-            {
-                string n = Helpers.RandomString(10);
-                string json = "{\"battle_queue_id\":\"" + battleId + "\",\"app\":\"" + Constants.APP_VERSION + "\",\"n\":\"" + n + "\"}";
-                Logs.LogMessage($"{user.Username}: Surrendering battle...");
-                COperations.custom_json custom_json = CreateCustomJson(user, false, true, "sm_surrender", json);
-                CtransactionData oTransaction = hive.CreateTransaction(new object[] { custom_json }, new string[] { user.Keys.PostingKey });
-                var postData = GetStringForSplinterlandsAPI(oTransaction);
-                var response = HttpWebRequest.WebRequestPost(postData, Constants.SPLINTERLANDS_BATTLE_API, Referer: "https://splinterlands.com/");
-                string responseTx = Helpers.DoQuickRegex("id\":\"(.*?)\"", response);
-
-                if (responseTx == "")
-                    return false;
-            }
-            catch (Exception ex)
-            {
-                Logs.LogMessage($"{user.Username}: Error surrendering battle: " + ex.ToString(), Logs.LOG_WARNING);
-                return false;
-            }
-
-            return true;
-        }
-
+        
         public COperations.custom_json CreateCustomJson(User user, bool activeKey, bool postingKey, string methodName, string json)
         {
             COperations.custom_json customJsonOperation = new COperations.custom_json

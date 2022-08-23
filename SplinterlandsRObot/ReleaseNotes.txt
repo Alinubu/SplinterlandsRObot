@@ -1,11 +1,15 @@
-﻿Version 1.1.7-beta
+﻿Version 1.1.8
 
 Changes:
-    - Accounts will no longer need to be all loaded at bot startup
-    - Fixed a bug where Renting Bot would not stop even if CP was above the set limit
-    - Fixed issue claiming season rewards
-    - 2 new config option added
-        - AutoClaimSeasonRewards: will detect when season rewards are available and automatically claim them
-        - AutoTransferAfterSeasonClaim: will trigger the assets transfer once season rewards are claimed
-        Check config example
+    - Changed DoQuest option so it will now control every option for the Quests. If disabled no other Focus option will be used
+    - PowerLimit option has been moved from Renting to the general config area but will still be used by renting process
+    - Added config option (FocusStartMinimumCP) to start a new focus only if CP is above the set PowerLimit
+    - Added config option (FocusMinimumRating) to ignore Focus rate if rating is below the set limit
+    - Added option in settings.xml file to set proxy usage for the bot client
+    - Added config option (GroupCardsAmount) to set the number of cards to be grouped in one renting transaction
+    - Added config options (ClaimSPSRewards, ClaimSPSRewardsEvery) for claiming SPS staked rewards
+    - Added config options (UnstakeSPS, MinimumSPSUnstakeAmount, UnstakeWeekly) for unstaking SPS monthly or weekly
+    - RentSpecificCards option will not get stuck on the first cards of the list, will randomize the list of cards to cover more "ground"
+    - Added Magic on rentals renew process
+    - Adjusted focus rewards to display SPS rewards
 

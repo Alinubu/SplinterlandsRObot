@@ -21,7 +21,9 @@ namespace SplinterlandsRObot
                         Keys = new Keys()
                         {
                             ActiveKey = Helpers.ReadNode(node, "activeKEY", false, "none"),
-                            PostingKey = Helpers.ReadNode(node, "postingKEY", true)
+                            PostingKey = Helpers.ReadNode(node, "postingKEY", true),
+                            JwtToken = null,
+                            JwtExpire = DateTime.MinValue
                         },
                         ConfigFile = Helpers.ReadNode(node, "ConfigFile", false, "config.xml")
                     });
