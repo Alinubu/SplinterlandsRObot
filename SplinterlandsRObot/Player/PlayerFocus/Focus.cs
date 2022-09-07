@@ -179,7 +179,7 @@ namespace SplinterlandsRObot.Player.PlayerFocus
 
             int neededRshares = GetFocusPointsNeeded(baseRshares, multiplier);
 
-            string response = $"{earned_chests}/{maxChests}|{rshares}/{neededRshares}]";
+            string response = $"{earned_chests}/{maxChests}|{rshares}/{neededRshares}";
             return response;
         }
     }

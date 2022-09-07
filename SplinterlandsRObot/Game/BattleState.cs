@@ -32,7 +32,6 @@ namespace SplinterlandsRObot.Models.Bot
             {
                 if (!BattleStarted)
                 {
-                    i++;
                     await Task.Delay(1000);
                 }
                 else return BattleStarted;
@@ -45,7 +44,6 @@ namespace SplinterlandsRObot.Models.Bot
             {
                 if (!TeamSubmitted)
                 {
-                    i++;
                     await Task.Delay(1000);
                 }
                 else return TeamSubmitted;
@@ -58,7 +56,6 @@ namespace SplinterlandsRObot.Models.Bot
             {
                 if (!OpponentTeamSubmitted)
                 {
-                    i++;
                     await Task.Delay(1000);
                 }
                 else return OpponentTeamSubmitted;
@@ -71,7 +68,6 @@ namespace SplinterlandsRObot.Models.Bot
             {
                 if (!TeamRevealed)
                 {
-                    i++;
                     await Task.Delay(1000);
                 }
                 else return TeamRevealed;
@@ -84,7 +80,6 @@ namespace SplinterlandsRObot.Models.Bot
             {
                 if (!BattleCanceled)
                 {
-                    i++;
                     await Task.Delay(1000);
                 }
                 else return BattleCanceled;
@@ -97,7 +92,6 @@ namespace SplinterlandsRObot.Models.Bot
             {
                 if (!ResultsReceived)
                 {
-                    i++;
                     await Task.Delay(1000);
                 }
                 else return ResultsReceived;
