@@ -447,7 +447,7 @@ namespace SplinterlandsRObot.Game
                         SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                     }
 
-                    while (stopwatch.Elapsed.Seconds < 145 && !surrender)
+                    while (stopwatch.Elapsed.TotalSeconds < 145 && !surrender)
                     {
                         if (await BattleState.WaitForOpponentTeamSubmitted(5))
                         {
