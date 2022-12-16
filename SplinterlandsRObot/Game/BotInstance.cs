@@ -110,16 +110,25 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
+                Logs.LogMessage($"{UserData.Username}: Updating player data.", Logs.LOG_ALERT, supress: true);
+                if (!await UpdatePlayer())
+                    return SleepUntil;
+
                 if (InstanceManager.RentingQueue.ContainsKey(UserData.Username) && !UserConfig.BattleWhileRenting)
                 {
                     SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                     return SleepUntil;
                 }
 
-                Logs.LogMessage($"{UserData.Username}: Updating player data.", Logs.LOG_ALERT, supress: true);
-                if (!await UpdatePlayer())
-                    return SleepUntil;
-                
+                if (InstanceManager.isDecDistributorRunning)
+                {
+                    if (!InstanceManager.DecTransferQueue.ContainsKey(UserData.Username) && UserConfig.RequestDecFromMain)
+                    {
+                        if (UserBalance.DEC < UserConfig.RequestWhenDecBelow)
+                            InstanceManager.DecTransferQueue.Add(UserData.Username, this);
+                    }
+                }
+
                 if (!_webSocket.IsStarted)
                 {
                     await WebsocketStart();
@@ -347,7 +356,7 @@ namespace SplinterlandsRObot.Game
                     return SleepUntil;
                 }
 
-                if (tx == "error" || !WaitForTransactionSuccess(tx, 30).Result.Item1)
+                if (tx == "error" || !WaitForTransactionSuccess(tx, 300).Result.Item1)
                 {
                     var outstandingGame = await SplinterlandsAPI.GetOutstandingMatch(UserData.Username);
                     if (outstandingGame != "null")

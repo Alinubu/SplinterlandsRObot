@@ -78,7 +78,10 @@
 	  <MininumDecToTransfer>10</MininumDecToTransfer><!--Bot will not trigger a transaction if the remaining amount is less than what is set-->
 	  <TransferSps>false</TransferSps><!--Will transfer SPS currency to main account-->
 	  <TransferPacks>false</TransferPacks><!--Will transfer Packs to main account-->
+	  <TransferVouchers>false</TransferVouchers><!--Will transfer Vouchers to main account-->
 	</TransferBot>
-	<SyncBotStats>false</SyncBotStats><!--Sync the user statistics with the server, you can check them on the bot website using the generated passkey-->
+	<RequestDecFromMain>false</RequestDecFromMain><!--(!! this option requires main_account.xml file to be configured)Will allow the user to trigger a request to the main account in order to receive DEC-->
+	<DesiredDecAmount>0</DesiredDecAmount><!--The amount of DEC the account should have after refill-->
+	<RequestWhenDecBelow>0</RequestWhenDecBelow><!--The DEC balance below which the user will trigger the request-->
   </ProFeatures>
 </config>

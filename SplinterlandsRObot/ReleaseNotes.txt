@@ -1,7 +1,9 @@
-﻿Version 1.1.9
+﻿Version 1.2.0
 
 Changes:
-    - Fixed the error causing rental process to restart when the card is not on the market
-    - Updated claim SPS rewards to work with the latest changes in the game
-    - Other minor adjustements
+    - Fixed an issue reading player balance in RentForPower
+    - Fixed an issue reading player balance in RenewRentals
+    - Fixed a bug in AssetsTransfer that would prevent cards from being transfered if some are listed for Sale/Rent
+    - Added option to transfer Vouchers to main account. Check "TransferVouchers" in config_example
+    - Added option to request DEC refill from main account. Requires main_account.xml file to be configured, check main_account_example.xml
 

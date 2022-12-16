@@ -16,15 +16,18 @@ namespace SplinterlandsRObot
         public static List<BotInstance> BotInstances = new();
         public static List<User> userList = new();
         public static List<UserStats> UsersStatistics = new();
-        public static Dictionary<string,int> RentingQueue = new();
+        public static Dictionary<string, int> RentingQueue = new();
+        public static Dictionary<string, BotInstance> DecTransferQueue = new();
         public static object StartBattleLock = new();
         public static HttpClient HttpClient = new();
         public static CookieContainer CookieContainer = new();
         public static bool isRentingServiceRunning = false;
         public static bool isRenewRentingServiceRunning = false;
         public static bool isStatsSyncRunning = false;
+        public static bool isDecDistributorRunning = false;
         private static FileSystemWatcher _fsWatcher = new FileSystemWatcher();
         public static Subject<string> _configs = new Subject<string>();
+        
         public static IObservable<string> Configs => _configs.AsObservable();
         public static void CreateUsersInstance()
         {
@@ -89,6 +92,13 @@ namespace SplinterlandsRObot
                     {
                         _ = Task.Run(async () => await new Bot().SyncUserStats(identifier, token).ConfigureAwait(false));
                         isStatsSyncRunning = true;
+                        Task.Delay(1500);
+                    }
+
+                    if (!isDecDistributorRunning)
+                    {
+                        _ = Task.Run(async () => await new DecDistributor().Start().ConfigureAwait(false));
+                        isDecDistributorRunning = true;
                         Task.Delay(1500);
                     }
                 }
