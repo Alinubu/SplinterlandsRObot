@@ -352,7 +352,9 @@ MigrationBackup/
 /SplinterlandsApi/*
 /SplinterlandsBrawls/*
 /SplinterlandsShared/*
-/BotApi/BotApi.csproj
-/SplinterlandsRentingIn/SplinterlandsRentingIn.csproj
-/SplinterlandsRentingOut/SplinterlandsRentingOut.csproj
-/HiveEngine/HiveEngine.csproj
+/BotApi/*
+/SplinterlandsRentingIn/*
+/SplinterlandsRentingOut/*
+/HiveEngine/*
+/SplinterlandsRewards/*
+/SplinterlandsAssets/*
