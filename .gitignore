@@ -349,3 +349,10 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 /SplinterlandsRObot/Extensions
+/SplinterlandsApi/*
+/SplinterlandsBrawls/*
+/SplinterlandsShared/*
+/BotApi/BotApi.csproj
+/SplinterlandsRentingIn/SplinterlandsRentingIn.csproj
+/SplinterlandsRentingOut/SplinterlandsRentingOut.csproj
+/HiveEngine/HiveEngine.csproj
