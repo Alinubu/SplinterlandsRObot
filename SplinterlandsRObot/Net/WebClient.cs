@@ -13,6 +13,7 @@ namespace SplinterlandsRObot.Net
 
         public WebClient(string url, string? origin = "", string? referer = "", string? proxyUrl = null, string? proxyPort = null, string? proxyUser = null, string? proxyPassword = null)
         {
+            httpClientHandler= new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli };
             if (proxyUrl is not null && proxyPort is not null)
             {
                 proxy = new WebProxy()
@@ -31,7 +32,7 @@ namespace SplinterlandsRObot.Net
 
             if (proxy is not null)
             {
-                httpClientHandler = new HttpClientHandler() { Proxy = proxy };
+                httpClientHandler.Proxy = proxy;
             }
 
             if (httpClientHandler is not null)
@@ -45,6 +46,7 @@ namespace SplinterlandsRObot.Net
             client.DefaultRequestHeaders.Add("referer", referer);
             client.DefaultRequestHeaders.Add("accept", "application/json, text/plain, */*");
             client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36");
+            client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate, br");
         }
 
         public async Task<string> PostAsync(string postData, string path)

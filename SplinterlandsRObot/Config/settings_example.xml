@@ -4,7 +4,7 @@
 	<MaxThreads>1</MaxThreads><!--The number of accounts the bot will play in parallel-->
 	
 	<DebugMode>false</DebugMode><!--Just enable this if you have issues, will diplay a lot more logs in the console-->
-	<ApiUrl>http://api.splinterlandsrobot.com:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
+	<ApiUrl>http://botapi.splinterlandsrobot.com:5000</ApiUrl><!--DON'T CHANGE THIS UNLESS INSTRUCTED SO-->
 	<HiveNode>https://anyx.io/</HiveNode><!--Hive blockchain node address-->
 	<Proxy><!--Proxy usage when calling Splinterlands API-->
 		<ProxyUrl></ProxyUrl>

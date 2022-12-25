@@ -30,6 +30,9 @@
     <None Update="Config\config_example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Config\main_account_example.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Config\rentcards_example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

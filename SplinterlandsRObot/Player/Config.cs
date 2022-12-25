@@ -74,6 +74,12 @@ namespace SplinterlandsRObot.Player
         public double MinimumDecToTransfer { get; set; }
         public bool TransferSPS { get; set; }
         public bool TransferPacks { get; set; }
+        public bool TransferVouchers { get; set; }
+
+        //Dec Distributor
+        public bool RequestDecFromMain { get; set; }
+        public double DesiredDecAmount { get; set; }
+        public double RequestWhenDecBelow { get; set; }
 
         private string _filename;
 
@@ -147,7 +153,11 @@ namespace SplinterlandsRObot.Player
             MinimumDecToTransfer = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/MininumDecToTransfer", false, "10"));
             TransferSPS = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferSps", false, "false"));
             TransferPacks = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferPacks", false, "false"));
+            TransferVouchers = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/TransferBot/TransferVouchers", false, "false"));
             UsePrivateApi = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/UsePrivateAPi", false, "false"));
+            RequestDecFromMain = Convert.ToBoolean(Helpers.ReadNode(rootNode, "ProFeatures/RequestDecFromMain", false, "false"));
+            DesiredDecAmount = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/DesiredDecAmount", false, "0"));
+            RequestWhenDecBelow = Convert.ToDouble(Helpers.ReadNode(rootNode, "ProFeatures/RequestWhenDecBelow", false, "0"));
         }
 
         private void OnConfigChanged(string filename)
