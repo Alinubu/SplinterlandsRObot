@@ -25,7 +25,7 @@ namespace SplinterlandsRObot.Game
         public Config UserConfig { get; set; }
         public UserDetails UserDetails = new();
         public Balances UserBalance = new();
-        private CardsCollection UserCards = new();
+        public CardsCollection UserCards = new();
         private BattleState BattleState = new();
         private HiveService HiveService = new();
         private BattleService BattleService = new();
@@ -418,18 +418,18 @@ namespace SplinterlandsRObot.Game
                             Logs.LogMessage($"{UserData.Username}: Fetching team from private api");
                             try
                             {
-                                team = await BotAPI.GetTeamFromAPI(matchDetails, focusSplinter, focusCompleted, UserCards, UserData.Username, UserDetails.league, prioritizeFocus, UserConfig, true);
+                                team = await BotAPI.GetTeamFromAPI(matchDetails, focusSplinter, focusCompleted, UserCards, UserData.Username, (UserConfig.BattleMode == "modern" ? (int)UserDetails.modern_league : UserDetails.league), prioritizeFocus, UserConfig, true);
                             }
                             catch (Exception ex)
                             {
                                 Logs.LogMessage($"{UserData.Username}: Error fetching team from private api. Trying on public api", Logs.LOG_ALERT);
-                                team = await BotAPI.GetTeamFromAPI(matchDetails, focusSplinter, focusCompleted, UserCards, UserData.Username, UserDetails.league, prioritizeFocus, UserConfig, false);
+                                team = await BotAPI.GetTeamFromAPI(matchDetails, focusSplinter, focusCompleted, UserCards, UserData.Username, (UserConfig.BattleMode == "modern" ? (int)UserDetails.modern_league : UserDetails.league), prioritizeFocus, UserConfig, false);
                             }
                         }
                         else
                         {
                             Logs.LogMessage($"{UserData.Username}: Fetching team from public api");
-                            team = await BotAPI.GetTeamFromAPI(matchDetails, focusSplinter, focusCompleted, UserCards, UserData.Username, UserDetails.league, prioritizeFocus, UserConfig, false);
+                            team = await BotAPI.GetTeamFromAPI(matchDetails, focusSplinter, focusCompleted, UserCards, UserData.Username, (UserConfig.BattleMode == "modern" ? (int)UserDetails.modern_league : UserDetails.league), prioritizeFocus, UserConfig, false);
                         }
                     }
                     catch (Exception ex)

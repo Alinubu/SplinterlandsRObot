@@ -358,3 +358,15 @@ MigrationBackup/
 /HiveEngine/*
 /SplinterlandsRewards/*
 /SplinterlandsAssets/*
+/ConfigurationManager/*
+/Logger/*
+/ProxyManager/*
+/ROBot/*
+/RObotConfigurator/*
+/SettingsManager/*
+/Shared/*
+/Splinterlands/*
+/Utilities/*
+/SplinterlandsBattleTrainer/*
+/SplinterlandsRankedBattles/*
+/WebSocketManager/*

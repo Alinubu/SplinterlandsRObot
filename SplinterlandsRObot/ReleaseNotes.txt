@@ -1,10 +1,6 @@
-﻿Version 1.2.0
+﻿Version 1.2.2
 
 Changes:
-    - Fixed an issue reading player balance in RentForPower
-    - Fixed an issue reading player balance in RenewRentals
-    - Fixed a bug in AssetsTransfer that would prevent cards from being transfered if some are listed for Sale/Rent
-    - Added option to transfer Vouchers to main account. Check "TransferVouchers" in config_example
-    - Added option to request DEC refill from main account. Requires main_account.xml file to be configured, check main_account_example.xml
-    - Updated Api calls to accept compression
+    - Fixed issue with daily rentals trying to rent seasonal ones
+    - Bot will now search rentals for the specified xp or above. Also it will not rent a card if you already own a higher level version (limited to the same foil).
 
