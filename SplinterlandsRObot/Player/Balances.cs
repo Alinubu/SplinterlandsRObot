@@ -1,4 +1,7 @@
-﻿namespace SplinterlandsRObot.Player
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using SplinterlandsRObot.API;
+
+namespace SplinterlandsRObot.Player
 {
     public class Balances
     {
@@ -18,13 +21,16 @@
             var values = balances.Where(x => x.token == "ECR").Any() ? balances.Where(x => x.token == "ECR").First() : null;
             if (values != null)
             {
+                
                 if (values.balance == 0)
-                { ECR = 100; }
+                { ECR = 50; }
                 else
                 {
-                    double rechargeRate = 0.0868;
-                    double ecr = values.balance + (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset((DateTime)values.last_reward_time).ToUnixTimeMilliseconds()) / 3000 * rechargeRate;
-                    ECR = Math.Min(ecr, 10000) / 100;
+                    double msInOneHour = 1000 * 60 * 60;
+                    double hourlyRechargeRate = 1;
+                    double regeneratedEnergy = (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset((DateTime)values.last_reward_time).ToUnixTimeMilliseconds()) / msInOneHour * hourlyRechargeRate;
+                    double ecr = Math.Floor(values.balance + regeneratedEnergy);
+                    ECR = Math.Min(ecr, 50);
                 }
             }
             else { ECR = 0; }

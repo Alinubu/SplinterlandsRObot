@@ -42,11 +42,14 @@ namespace SplinterlandsRObot.Net
             Uri uri = new Uri(url);
             client.BaseAddress = uri;
 
-            client.DefaultRequestHeaders.Add("origin", origin);
-            client.DefaultRequestHeaders.Add("referer", referer);
+            if (origin != "")
+                client.DefaultRequestHeaders.Add("origin", origin);
+            if (referer != "")
+                client.DefaultRequestHeaders.Add("referer", referer);
             client.DefaultRequestHeaders.Add("accept", "application/json, text/plain, */*");
             client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36");
             client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate, br");
+            client.Timeout = TimeSpan.FromSeconds(160);
         }
 
         public async Task<string> PostAsync(string postData, string path)

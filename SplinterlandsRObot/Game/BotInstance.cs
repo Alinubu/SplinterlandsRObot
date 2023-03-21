@@ -293,15 +293,15 @@ namespace SplinterlandsRObot.Game
                 
                 if (!waitForECR)
                 {
-                    if ((UserBalance.ECR) < UserConfig.EcrLimit)
+                    if (UserBalance.ECR < UserConfig.EcrLimit)
                     {
-                        Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{Math.Round(UserBalance.ECR, 2)}%/{UserConfig.EcrLimit}%] ", Logs.LOG_ALERT);
+                        Logs.LogMessage($"{UserData.Username}: ECR limit reached, moving to next account [{UserBalance.ECR}/{UserConfig.EcrLimit}] ", Logs.LOG_ALERT);
                         SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                         await Task.Delay(1500);
                         if (UserConfig.WaitToRechargeEcr)
                         {
                             waitForECR = true;
-                            Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {UserConfig.EcrRechargeLimit}%", Logs.LOG_ALERT);
+                            Logs.LogMessage($"{UserData.Username}: Recharge enabled, user will wait until ECR is {UserConfig.EcrRechargeLimit}", Logs.LOG_ALERT);
                         }
                         SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                         return SleepUntil;
@@ -311,13 +311,13 @@ namespace SplinterlandsRObot.Game
                 {
                     if (UserBalance.ECR < UserConfig.EcrRechargeLimit)
                     {
-                        Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%. Moving to next account", Logs.LOG_ALERT);
+                        Logs.LogMessage($"{UserData.Username}: Recharge enabled, ECR {UserBalance.ECR}/{UserConfig.EcrRechargeLimit}. Moving to next account", Logs.LOG_ALERT);
                         SleepUntil = DateTime.Now.AddMinutes(UserConfig.SleepBetweenBattles);
                         return SleepUntil;
                     }
                     else
                     {
-                        Logs.LogMessage($"{UserData.Username}: ECR Restored {Math.Round(UserBalance.ECR)}%/{UserConfig.EcrRechargeLimit}%", Logs.LOG_SUCCESS);
+                        Logs.LogMessage($"{UserData.Username}: ECR Restored {UserBalance.ECR}/{UserConfig.EcrRechargeLimit}", Logs.LOG_SUCCESS);
                         waitForECR = false;
                     }
                 }

@@ -370,3 +370,6 @@ MigrationBackup/
 /SplinterlandsBattleTrainer/*
 /SplinterlandsRankedBattles/*
 /WebSocketManager/*
+/SplinterlandsRObot/Config/users.xml
+/SplinterlandsRObot/Config/settings.xml
+/SplinterlandsRObot/Config/config.xml

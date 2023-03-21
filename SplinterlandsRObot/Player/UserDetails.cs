@@ -25,7 +25,7 @@ namespace SplinterlandsRObot.Player
         public int max_rank { get; set; }
         public int? modern_max_rank { get; set; }
         public int champion_points { get; set; }
-        public int capture_rate { get; set; }
+        public string capture_rate { get; set; }
         public int? last_reward_block { get; set; }
         public DateTime last_reward_time { get; set; }
         public int collection_power { get; set; }

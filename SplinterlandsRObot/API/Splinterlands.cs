@@ -100,15 +100,17 @@ namespace SplinterlandsRObot.API
             JArray balances = (JArray)JToken.Parse(result);
 
             var ECRBalance = balances.Where(x => (string)x["token"] == "ECR").FirstOrDefault(defaultValue);
-            if ((int)ECRBalance["balance"] == 0)
-            { balance.ECR = 100; }
+            var captureRate = Convert.ToDouble(ECRBalance["balance"].ToString());
+            if (captureRate == 0)
+            { balance.ECR = 50; }
             else
             {
-                var captureRate = (int)ECRBalance["balance"];
+                
                 DateTime lastRewardTime = (DateTime)ECRBalance["last_reward_time"];
-                double ecrRegen = 0.0868;
-                double ecr = captureRate + (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset(lastRewardTime).ToUnixTimeMilliseconds()) / 3000 * ecrRegen;
-                balance.ECR = Math.Min(ecr, 10000) / 100;
+                double msInOneHour = 1000 * 60 * 60;
+                double hourlyRechargeRate = 1;
+                double ecr = Math.Floor(captureRate + (new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - new DateTimeOffset(lastRewardTime).ToUnixTimeMilliseconds()) / msInOneHour * hourlyRechargeRate);
+                balance.ECR = Math.Min(ecr, 50);
             }
 
             var gPotionBalance = balances.Where(x => (string)x["token"] == "GOLD").FirstOrDefault(defaultValue);
