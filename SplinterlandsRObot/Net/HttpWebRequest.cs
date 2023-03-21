@@ -4,7 +4,8 @@ namespace SplinterlandsRObot.Net
 {
     public static class HttpWebRequest
     {
-        public static HttpClient client = new HttpClient();
+        public static HttpClient client = new HttpClient() { Timeout = TimeSpan.FromSeconds(160) };
+        
         /// <summary>
         /// Creates a http webrequest with the POST method
         /// </summary>
