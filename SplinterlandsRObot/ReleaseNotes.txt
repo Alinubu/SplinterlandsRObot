@@ -1,6 +1,6 @@
-﻿Version 1.2.2
+﻿Version 1.2.3
 
 Changes:
-    - Fixed issue with daily rentals trying to rent seasonal ones
-    - Bot will now search rentals for the specified xp or above. Also it will not rent a card if you already own a higher level version (limited to the same foil).
+    - Update bot with new Energy system
+    - Minor adjustments
 
