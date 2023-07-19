@@ -14,6 +14,8 @@ namespace SplinterlandsRObot.Player
         public double Voucher { get; set; }
         public double SPS { get; set; }
         public double SPSP { get; set; }
+        public double SPSP_OUT { get; set; }
+        public double SPSP_IN { get; set; }
         public double ECR { get; set; }
 
         public void UpdateECR(List<Balance> balances)

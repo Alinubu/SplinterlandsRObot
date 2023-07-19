@@ -1,6 +1,8 @@
-﻿Version 1.2.3
+﻿Version 1.2.4
 
 Changes:
-    - Update bot with new Energy system
-    - Minor adjustments
-
+    - Updated focus claim
+    - Fixed a bug with sps unstake
+    - Fixed a bug with backup option for finding ongoing battle
+    - Updated chest tier information for the scenario where api returns null value
+    - Removed CP from advance league

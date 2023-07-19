@@ -18,7 +18,7 @@ namespace SplinterlandsRObot.Player.PlayerFocus
         public int reward_qty { get; set; }
         public string? refresh_trx_id { get; set; }
         public object? rewards = null;
-        public int? chest_tier { get; set; }
+        public int? chest_tier { get; set; } = 0;
         public int rshares { get; set; }
         public int earned_chests = 0;
 
@@ -124,11 +124,11 @@ namespace SplinterlandsRObot.Player.PlayerFocus
 
         public bool IsFocusCompleted()
         {
-            if ((DateTime.Now - created_date.ToLocalTime()).TotalHours > 24)
+            string focusResetTime = DateTime.UtcNow.ToString("yyyy-MM-dd") + " 00:00:00";
+            if (created_date < DateTime.Parse(focusResetTime))
                 return true;
-            else if ((DateTime.Now - created_date.ToLocalTime()).TotalHours < 24)
+            else 
                 return false;
-            else return false;
         }
 
         public bool IsFocusClaimed()
