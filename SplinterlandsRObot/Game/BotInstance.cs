@@ -144,7 +144,7 @@ namespace SplinterlandsRObot.Game
                     LastSPSclaim = await new CollectSPS().ClaimSPSRewards(UserData, UserDetails.token); 
 
                 if (UserConfig.UnstakeSPS && DateTime.Now > NextSPSUnstake)
-                    NextSPSUnstake = await new CollectSPS().SPSUnstake(UserData, UserDetails.token, UserConfig.MinimumSPSUnstakeAmount, UserConfig.UnstakeWeekly, UserBalance.SPSP);
+                    NextSPSUnstake = await new CollectSPS().SPSUnstake(UserData, UserDetails.token, UserConfig.MinimumSPSUnstakeAmount, UserConfig.UnstakeWeekly, UserBalance.SPSP - UserBalance.SPSP_OUT);
 
                 if (UserConfig.AutoClaimSeasonRewards)
                 {
@@ -200,7 +200,7 @@ namespace SplinterlandsRObot.Game
                         {
                             if (UserDetails.quest.CanFocusBeClaimed())
                             {
-                                Logs.LogMessage($"{UserData.Username}: 24h passed since Daily Focus was started. Claiming Rewards...", Logs.LOG_ALERT);
+                                Logs.LogMessage($"{UserData.Username}: Focus has ended. Claiming Rewards...", Logs.LOG_ALERT);
                                 string focusClaimTx = await UserDetails.quest.ClaimFocusRewards(UserData);
                                 if (focusClaimTx != null)
                                 {
@@ -358,7 +358,7 @@ namespace SplinterlandsRObot.Game
 
                 if (tx == "error" || !WaitForTransactionSuccess(tx, 300).Result.Item1)
                 {
-                    var outstandingGame = await SplinterlandsAPI.GetOutstandingMatch(UserData.Username);
+                    var outstandingGame = await SplinterlandsAPI.GetOutstandingMatch(UserData.Username, UserDetails.token);
                     if (outstandingGame != "null")
                     {
                         tx = Helpers.DoQuickRegex("\"id\":\"(.*?)\"", outstandingGame);
@@ -644,6 +644,8 @@ namespace SplinterlandsRObot.Game
                     Voucher = UserDetails.balances.Where(x => x.token == "VOUCHER").Any() ? UserDetails.balances.Where(x => x.token == "VOUCHER").First().balance : 0,
                     SPS = UserDetails.balances.Where(x => x.token == "SPS").Any() ? UserDetails.balances.Where(x => x.token == "SPS").First().balance : 0,
                     SPSP = UserDetails.balances.Where(x => x.token == "SPSP").Any() ? UserDetails.balances.Where(x => x.token == "SPSP").First().balance : 0,
+                    SPSP_IN = UserDetails.balances.Where(x => x.token == "SPSP-IN").Any() ? UserDetails.balances.Where(x => x.token == "SPSP-IN").First().balance: 0,
+                    SPSP_OUT = UserDetails.balances.Where(x => x.token == "SPSP-OUT").Any() ? UserDetails.balances.Where(x => x.token == "SPSP-OUT").First().balance : 0,
                     ECR = 0
                 };
                 
@@ -768,9 +770,7 @@ namespace SplinterlandsRObot.Game
         {
             try
             {
-                int highestPossibleLeague = UserConfig.BattleMode == "modern"?
-                    GetMaxModernLeagueByRankAndPower((int)UserDetails.modern_rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power)
-                    : GetMaxLeagueByRankAndPower(UserDetails.rating - UserConfig.LeagueRatingThreshold, UserDetails.collection_power);
+                int highestPossibleLeague = GetMaxLeagueByRank(UserDetails.rating - UserConfig.LeagueRatingThreshold);
                 if (highestPossibleLeague > (UserConfig.BattleMode == "modern" ? UserDetails.modern_league : UserDetails.league) && highestPossibleLeague <= (UserConfig.MaxLeague == 0 ? 13 : UserConfig.MaxLeague))
                 {
                     Logs.LogMessage($"{UserData.Username}: Advancing to higher league!", Logs.LOG_SUCCESS);
@@ -805,56 +805,32 @@ namespace SplinterlandsRObot.Game
                 Logs.LogMessage($"{UserData.Username}: Error at advancing league: {ex}");
             }
         }
-        private int GetMaxLeagueByRankAndPower(int rating, int power)
+        private int GetMaxLeagueByRank(int rating)
         {
             //champion
-            if ((rating is >= 3700) && (power is >= 500000))
+            if (rating is >= 3700)
             {
                 return 13;
             }
             //diamong
-            if ((rating is >= 2800) && (power is >= 250000))
+            if (rating is >= 2800)
             {
                 return 10;
             }
             //gold
-            if ((rating is >= 1900) && (power is >= 100000))
+            if (rating is >= 1900)
             {
                 return 7;
             }
             //silver
-            if ((rating is >= 1000) && (power is >= 15000))
+            if (rating is >= 1000)
             {
                 return 4;
             }
 
             return 0;
         }
-        private int GetMaxModernLeagueByRankAndPower(int rating, int power)
-        {
-            //champion
-            if ((rating is >= 3700) && (power is >= 250000))
-            {
-                return 13;
-            }
-            //diamong
-            if ((rating is >= 2800) && (power is >= 125000))
-            {
-                return 10;
-            }
-            //gold
-            if ((rating is >= 1900) && (power is >= 50000))
-            {
-                return 7;
-            }
-            //silver
-            if ((rating is >= 1000) && (power is >= 7500))
-            {
-                return 4;
-            }
-
-            return 0;
-        }
+        
         #endregion
 
         #region WebSocket

@@ -1,6 +1,6 @@
 ﻿Version 1.2.3
 
 Changes:
-    - Update bot with new Energy system
+    - Updated bot client to work with new Energy system
     - Minor adjustments
 

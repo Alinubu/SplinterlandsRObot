@@ -9,8 +9,8 @@
 
             seasonChests = CalculateEarnedChests(
                     Math.Max(
-                        modern != null ? modern.chest_tier : 0,
-                        wild != null ? wild.chest_tier : 0
+                        modern != null ? (int)modern.chest_tier : 0,
+                        wild != null ? (int)wild.chest_tier : 0
                         ),
                     totalRshars
                     );            

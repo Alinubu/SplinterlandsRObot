@@ -15,7 +15,7 @@ namespace SplinterlandsRObot.API
         const string REFERER = "https://splinterlands.com";
         const string SP_USER_DATA = "players/details?name=";
         const string SP_CARDS_COLLECTION = "cards/collection/@@_username_@@?v=@@_timestamp_@@&token=@@_accessToken_@@&username=@@_username_@@";
-        const string SP_OUTSTANGING_MATCH = "players/outstanding_match?username=";
+        const string SP_OUTSTANGING_MATCH = "players/outstanding_match?username=@@_username_@@&token=@@_accessToken_@@";
         const string SP_PlAYER_BALANCE = "players/balances?username=";
         const string SP_TRANSACTION_DETAILS = "transactions/lookup?trx_id=";
         const string SP_SPLINTERLANDS_CARDS = "cards/get_details";
@@ -75,9 +75,9 @@ namespace SplinterlandsRObot.API
 
             return JsonConvert.DeserializeObject<CardsCollection>(result);
         }
-        public async Task<string> GetOutstandingMatch(string username)
+        public async Task<string> GetOutstandingMatch(string username, string token)
         {
-            return await client.GetAsync(SP_OUTSTANGING_MATCH + username);
+            return await client.GetAsync(SP_OUTSTANGING_MATCH.Replace("@@_username_@@", username).Replace("@@_accessToken_@@", token));
         }
         public async Task<string> GetTransactionDetails(string tx)
         {

@@ -12,7 +12,7 @@
         public string? reward_claim_tx { get; set; }
         public int league { get; set; }
         public int max_league { get; set; }
-        public int chest_tier { get; set; }
+        public int? chest_tier { get; set; } = 0;
         public int rshares { get; set; }
     }
 }
